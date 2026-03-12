@@ -121,44 +121,45 @@ function pathPos(t){
   return {x:(c1+f*(c2-c1)+0.5)*CW, y:(r1+f*(r2-r1)+0.5)*CH};
 }
 
-function spawnEnemy(hp, speed, reward, isBoss){
-  // maxHp se guarda como entero para mostrar limpio
-  state.enemies.push({t:0, hp, maxHp:hp, speed, reward, id:Math.random(), isBoss:!!isBoss});
+function spawnEnemy(hp, speed, reward, kind){
+  state.enemies.push({t:0, hp, maxHp:hp, speed, reward, id:Math.random(), kind: kind||'normal'});
 }
+
+// Definición visual de cada tipo de enemigo
+const ENEMY_KINDS = {
+  normal: {color:'#C0392B', border:null,       radius:0.27, label:'N'},
+  fast:   {color:'#E74C3C', border:null,       radius:0.21, label:'R'},
+  heavy:  {color:'#7B1A1A', border:null,       radius:0.34, label:'P'},
+  boss:   {color:'#A00000', border:'#FF4444',  radius:0.48, label:'J'},
+};
 
 // Escala de oleadas suave hasta 100, jefe cada 10 oleadas
 function buildWaveQueue(w){
   const q = [];
-  // Número de enemigos: crece suavemente de 3 a 30
   const count = Math.min(3 + Math.floor(w * 0.27), 30);
-  // HP base por oleada: muy poca al inicio, crece con w
-  const baseHp = Math.round(5 + w * 2.5);
-  // Velocidad crece muy ligeramente
-  const baseSpeed = 0.012 + w * 0.00008;
-  // Recompensa por matar
+  // HP más suave: wave 10 ≈ 16, wave 50 ≈ 56, wave 100 ≈ 106
+  const baseHp = Math.round(4 + w * 1.2);
+  const baseSpeed = 0.012 + w * 0.00007;
   const baseReward = Math.max(2, Math.floor(2 + w * 0.3));
 
   for(let i=0; i<count; i++){
-    if(w >= 30 && i % 6 === 0){
-      // Tanque pesado: mucha vida, lento
-      q.push({hp: Math.round(baseHp*3), speed: baseSpeed*0.6, reward: baseReward*4});
-    } else if(w >= 15 && i % 4 === 0){
-      // Mini-tanque: vida media-alta
-      q.push({hp: Math.round(baseHp*1.8), speed: baseSpeed*0.75, reward: baseReward*2});
+    if(w >= 20 && i % 5 === 0){
+      // Pesado: más vida, más lento
+      q.push({hp: Math.round(baseHp*2.2), speed: baseSpeed*0.6, reward: baseReward*3, kind:'heavy'});
     } else if(w >= 5 && i % 3 === 0){
-      // Explorador: rápido pero débil
-      q.push({hp: Math.round(baseHp*0.5), speed: baseSpeed*1.8, reward: Math.max(1,Math.floor(baseReward*0.8))});
+      // Rápido: menos vida, más veloz
+      q.push({hp: Math.round(baseHp*0.45), speed: baseSpeed*1.9, reward: Math.max(1,Math.floor(baseReward*0.7)), kind:'fast'});
     } else {
       // Normal
-      q.push({hp: baseHp, speed: baseSpeed, reward: baseReward});
+      q.push({hp: baseHp, speed: baseSpeed, reward: baseReward, kind:'normal'});
     }
   }
 
-  // Jefe cada 10 oleadas — aparece al final de la oleada
+  // Jefe cada 10 oleadas: más vida que pesado pero razonable (wave10=30, wave100=210)
   if(w % 10 === 0){
-    const n = w / 10; // 1..10
-    const bossHp = Math.round(20 + (n-1) * (500-20) / 9); // 20 → 500
-    q.push({hp: bossHp, speed: 0.007, reward: Math.round(bossHp*1.5), isBoss: true});
+    const n = w / 10;
+    const bossHp = Math.round(20 + (n-1) * (210-20) / 9);
+    q.push({hp: bossHp, speed: 0.007, reward: Math.round(bossHp*1.5), kind:'boss'});
   }
 
   return q;
@@ -174,6 +175,7 @@ function startWave(){
   state.spawnQueue = q;
   const bossThis = state.wave % 10 === 0;
   const bossMsg = bossThis ? ' — ¡JEFE!' : '';
+
   setMsg('Oleada ' + state.wave + ' — ' + q.length + ' enemigos' + bossMsg);
   updateHUD();
 }
@@ -191,7 +193,7 @@ function update(){
       state.spawnTimer = 0;
       if(state.spawnQueue.length > 0){
         const e = state.spawnQueue.shift();
-        spawnEnemy(e.hp, e.speed, e.reward, e.isBoss);
+        spawnEnemy(e.hp, e.speed, e.reward, e.kind);
       } else {
         state.spawning = false;
       }
@@ -333,50 +335,46 @@ function draw(){
     const pos = pathPos(e.t);
     if(!pos) return;
 
-    const isBoss = e.isBoss;
-    // Radio según tipo
-    const r = isBoss ? CW*0.52 : (e.maxHp > 50 ? CW*0.36 : CW*0.26);
+    const k = ENEMY_KINDS[e.kind] || ENEMY_KINDS.normal;
+    const isBoss = e.kind === 'boss';
+    const r = CW * k.radius;
 
-    // Cuerpo del enemigo
-    if(isBoss){
-      // Jefe: anillo exterior dorado + relleno morado
-      ctx.fillStyle = '#7B2FBE';
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
-      ctx.strokeStyle = '#FFD700';
-      ctx.lineWidth = 2.5;
+    // Cuerpo
+    ctx.fillStyle = k.color;
+    ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
+
+    // Anillo borde para el jefe
+    if(k.border){
+      ctx.strokeStyle = k.border;
+      ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.stroke();
       ctx.lineWidth = 1;
-      // Letra J en el jefe
-      ctx.fillStyle = '#FFD700';
-      ctx.font = `bold ${Math.round(CW*0.38)}px var(--font-sans)`;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText('J', pos.x, pos.y);
-    } else {
-      ctx.fillStyle = e.maxHp > 50 ? '#A32D2D' : '#D85A30';
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
     }
 
+    // Letra identificadora
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.round(CW * (isBoss ? 0.34 : 0.26))}px var(--font-sans)`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(k.label, pos.x, pos.y);
+
     // Barra de vida
-    const bw = Math.max(r*2.6, 24);
+    const bw = Math.max(r*2.6, 22);
     const bh = isBoss ? 7 : 5;
     const bx = pos.x - bw/2;
-    const by = pos.y - r - (isBoss ? 17 : 13);
+    const by = pos.y - r - (isBoss ? 16 : 12);
     const hpRatio = Math.max(0, e.hp / e.maxHp);
 
     ctx.fillStyle = dark ? '#444' : '#999';
     ctx.fillRect(bx, by, bw, bh);
-
-    // Color de la barra según % vida
-    const barColor = hpRatio > 0.6 ? '#5DCAA5' : hpRatio > 0.3 ? '#E8A020' : '#D85A30';
-    ctx.fillStyle = isBoss ? '#FFD700' : barColor;
+    const barColor = hpRatio > 0.6 ? '#5DCAA5' : hpRatio > 0.3 ? '#E8A020' : '#EE3333';
+    ctx.fillStyle = barColor;
     ctx.fillRect(bx, by, bw * hpRatio, bh);
 
-    // Texto HP: "actual / máximo"
+    // Texto HP: "actual/máximo"
     const hpDisplay = Math.ceil(e.hp) + '/' + e.maxHp;
     ctx.fillStyle = dark ? '#ddd' : '#222';
-    ctx.font = `${isBoss ? Math.round(CW*0.27) : Math.round(CW*0.21)}px var(--font-sans)`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
+    ctx.font = `${Math.round(CW * (isBoss ? 0.26 : 0.20))}px var(--font-sans)`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
     ctx.fillText(hpDisplay, pos.x, by - 1);
   });
 
