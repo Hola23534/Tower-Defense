@@ -1,0 +1,444 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+#wrap{padding:1rem 0;}
+#hud{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;color:var(--color-text-secondary);min-width:90px;}
+.stat .label{font-size:11px;margin-bottom:4px;}
+.stat .val{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
+.bar-bg{height:6px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width 0.2s;}
+#bar-lives{background:#D85A30;}
+#bar-coins{background:#E8A020;}
+#bar-wave{background:#5DCAA5;}
+#msg{flex:1;font-size:13px;color:var(--color-text-secondary);min-width:120px;display:flex;align-items:center;}
+#canvas{display:block;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:crosshair;width:100%;max-width:560px;}
+#controls{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
+button{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;}
+button:hover{background:var(--color-background-secondary);}
+button:active{transform:scale(0.98);}
+button:disabled{opacity:0.4;cursor:default;}
+#tower-select{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.tbtn{font-size:12px;padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;}
+.tbtn.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
+.tbtn:hover{background:var(--color-background-secondary);}
+</style>
+<div id="wrap">
+  <div id="hud">
+    <div class="stat">
+      <div class="label">Vidas</div>
+      <div class="val" id="lives">20</div>
+      <div class="bar-bg"><div class="bar-fill" id="bar-lives" style="width:100%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="label">Monedas</div>
+      <div class="val" id="coins">300</div>
+      <div class="bar-bg"><div class="bar-fill" id="bar-coins" style="width:30%"></div></div>
+    </div>
+    <div class="stat">
+      <div class="label">Oleada</div>
+      <div class="val" id="wave">0 / 100</div>
+      <div class="bar-bg"><div class="bar-fill" id="bar-wave" style="width:0%"></div></div>
+    </div>
+    <div class="stat" style="min-width:70px;">
+      <div class="label">Enemigos</div>
+      <div class="val" id="ecount">0</div>
+    </div>
+    <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
+  </div>
+  <div id="tower-select">
+    <button class="tbtn active" data-type="basic" title="Básica — 50 monedas | 1 dmg | velocidad normal">Torre basica (50) — 1 dmg</button>
+    <button class="tbtn" data-type="fast" title="Rapida — 80 monedas | 0.7 dmg | ataca muy rápido">Torre rapida (80) — 0.7 dmg</button>
+    <button class="tbtn" data-type="heavy" title="Pesada — 120 monedas | 3 dmg | ataca lento">Torre pesada (120) — 3 dmg</button>
+  </div>
+  <canvas id="canvas" width="560" height="400"></canvas>
+  <div id="controls">
+    <button id="startBtn">Iniciar oleada</button>
+    <button id="sellBtn">Vender torre (clic en torre)</button>
+    <button id="resetBtn">Reiniciar</button>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+const COLS = 14, ROWS = 10;
+const CW = canvas.width / COLS, CH = canvas.height / ROWS;
+const MAX_LIVES = 20;
+const TOTAL_WAVES = 100;
+
+const PATH = [
+  [0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[3,5],
+  [4,5],[5,5],[6,5],[6,4],[6,3],[6,2],[7,2],
+  [8,2],[8,3],[8,4],[8,5],[8,6],[8,7],
+  [9,7],[10,7],[11,7],[11,6],[11,5],[11,4],
+  [12,4],[13,4]
+];
+const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
+
+// Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
+const TOWER_TYPES = {
+  basic: {color:'#185FA5', range:2.5, fireRate:60,  dmg:1,   cost:50,  bullet:'#378ADD', label:'B'},
+  fast:  {color:'#3B6D11', range:2.0, fireRate:28,  dmg:0.7, cost:80,  bullet:'#639922', label:'R'},
+  heavy: {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120, bullet:'#D85A30', label:'P'},
+};
+
+let state = {
+  lives:20, coins:300, wave:0,
+  towers:[], enemies:[], bullets:[],
+  waveRunning:false, spawning:false,
+  spawnQueue:[],spawnTimer:0,
+  selectedType:'basic', sellMode:false,
+  gameOver:false, victory:false
+};
+
+function resetGame(){
+  state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false};
+  document.getElementById('sellBtn').classList.remove('active');
+  updateHUD();
+}
+
+function updateHUD(){
+  document.getElementById('lives').textContent = state.lives;
+  document.getElementById('coins').textContent = state.coins;
+  document.getElementById('wave').textContent = state.wave + ' / ' + TOTAL_WAVES;
+  document.getElementById('ecount').textContent = state.enemies.length + state.spawnQueue.length;
+  document.getElementById('startBtn').disabled = state.waveRunning || state.gameOver || state.victory;
+  document.getElementById('bar-lives').style.width = Math.max(0, state.lives / MAX_LIVES * 100) + '%';
+  document.getElementById('bar-coins').style.width = Math.min(100, state.coins / 1000 * 100) + '%';
+  document.getElementById('bar-wave').style.width = (state.wave / TOTAL_WAVES * 100) + '%';
+}
+
+function pathPos(t){
+  const idx = Math.floor(t);
+  if(idx >= PATH.length-1) return null;
+  const f = t - idx;
+  const [c1,r1] = PATH[idx];
+  const [c2,r2] = PATH[idx+1];
+  return {x:(c1+f*(c2-c1)+0.5)*CW, y:(r1+f*(r2-r1)+0.5)*CH};
+}
+
+function spawnEnemy(hp, speed, reward, isBoss){
+  // maxHp se guarda como entero para mostrar limpio
+  state.enemies.push({t:0, hp, maxHp:hp, speed, reward, id:Math.random(), isBoss:!!isBoss});
+}
+
+// Escala de oleadas suave hasta 100, jefe cada 10 oleadas
+function buildWaveQueue(w){
+  const q = [];
+  // Número de enemigos: crece suavemente de 3 a 30
+  const count = Math.min(3 + Math.floor(w * 0.27), 30);
+  // HP base por oleada: muy poca al inicio, crece con w
+  const baseHp = Math.round(5 + w * 2.5);
+  // Velocidad crece muy ligeramente
+  const baseSpeed = 0.012 + w * 0.00008;
+  // Recompensa por matar
+  const baseReward = Math.max(2, Math.floor(2 + w * 0.3));
+
+  for(let i=0; i<count; i++){
+    if(w >= 30 && i % 6 === 0){
+      // Tanque pesado: mucha vida, lento
+      q.push({hp: Math.round(baseHp*3), speed: baseSpeed*0.6, reward: baseReward*4});
+    } else if(w >= 15 && i % 4 === 0){
+      // Mini-tanque: vida media-alta
+      q.push({hp: Math.round(baseHp*1.8), speed: baseSpeed*0.75, reward: baseReward*2});
+    } else if(w >= 5 && i % 3 === 0){
+      // Explorador: rápido pero débil
+      q.push({hp: Math.round(baseHp*0.5), speed: baseSpeed*1.8, reward: Math.max(1,Math.floor(baseReward*0.8))});
+    } else {
+      // Normal
+      q.push({hp: baseHp, speed: baseSpeed, reward: baseReward});
+    }
+  }
+
+  // Jefe cada 10 oleadas — aparece al final de la oleada
+  if(w % 10 === 0){
+    const n = w / 10; // 1..10
+    const bossHp = Math.round(20 + (n-1) * (500-20) / 9); // 20 → 500
+    q.push({hp: bossHp, speed: 0.007, reward: Math.round(bossHp*1.5), isBoss: true});
+  }
+
+  return q;
+}
+
+function startWave(){
+  if(state.waveRunning || state.gameOver || state.victory) return;
+  state.wave++;
+  state.waveRunning = true;
+  state.spawning = true;
+  state.spawnTimer = 0;
+  const q = buildWaveQueue(state.wave);
+  state.spawnQueue = q;
+  const bossThis = state.wave % 10 === 0;
+  const bossMsg = bossThis ? ' — ¡JEFE!' : '';
+  setMsg('Oleada ' + state.wave + ' — ' + q.length + ' enemigos' + bossMsg);
+  updateHUD();
+}
+
+function setMsg(t){ document.getElementById('msg').textContent = t; }
+function dist(ax,ay,bx,by){ return Math.sqrt((ax-bx)**2+(ay-by)**2); }
+
+function update(){
+  if(state.gameOver || state.victory) return;
+
+  // Spawn
+  if(state.spawning){
+    state.spawnTimer++;
+    if(state.spawnTimer >= 38){
+      state.spawnTimer = 0;
+      if(state.spawnQueue.length > 0){
+        const e = state.spawnQueue.shift();
+        spawnEnemy(e.hp, e.speed, e.reward, e.isBoss);
+      } else {
+        state.spawning = false;
+      }
+    }
+  }
+
+  // Mover enemigos
+  state.enemies.forEach(e=>{
+    e.t += e.speed;
+    if(e.t >= PATH.length-1){
+      e.dead = true;
+      state.lives = Math.max(0, state.lives-1);
+      if(state.lives <= 0){ state.gameOver=true; setMsg('Game over! Llegaste a la oleada '+state.wave); }
+    }
+  });
+
+  // Torres disparan
+  state.towers.forEach(t=>{
+    t.cd = (t.cd||0) - 1;
+    if(t.cd > 0) return;
+    const tp = TOWER_TYPES[t.type];
+    const rangePx = tp.range * CW;
+    const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
+    let target=null, bestT=-Infinity;
+    state.enemies.forEach(e=>{
+      if(e.dead) return;
+      const pos = pathPos(e.t);
+      if(!pos) return;
+      if(dist(tx,ty,pos.x,pos.y)<rangePx && e.t>bestT){ bestT=e.t; target=e; }
+    });
+    if(target){
+      const pos = pathPos(target.t);
+      state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:tp.dmg,color:tp.bullet,speed:6});
+      t.cd = tp.fireRate;
+    }
+  });
+
+  // Mover balas
+  state.bullets.forEach(b=>{
+    const dx=b.tx-b.x, dy=b.ty-b.y, d=Math.sqrt(dx*dx+dy*dy);
+    if(d < b.speed){ b.hit=true; return; }
+    b.x += dx/d*b.speed; b.y += dy/d*b.speed;
+    const e = state.enemies.find(e=>e.id===b.target);
+    if(e && !e.dead){
+      const pos = pathPos(e.t);
+      if(pos){ b.tx=pos.x; b.ty=pos.y; }
+      if(d<8){ b.hit=true; e.hp-=b.dmg; if(e.hp<=0){ e.dead=true; state.coins+=e.reward; } }
+    } else { b.hit=true; }
+  });
+
+  state.enemies = state.enemies.filter(e=>!e.dead);
+  state.bullets = state.bullets.filter(b=>!b.hit);
+
+  // Fin de oleada
+  if(state.waveRunning && !state.spawning && state.enemies.length===0 && state.spawnQueue.length===0){
+    state.waveRunning = false;
+    if(state.wave >= TOTAL_WAVES){
+      state.victory = true;
+      setMsg('¡Victoria! Completaste las 100 oleadas!');
+    } else {
+      const bonus = 20 + state.wave * 3;
+      state.coins += bonus;
+      const nextBoss = state.wave % 10 === 9 ? ' — Próxima: ¡JEFE!' : '';
+      setMsg('Oleada '+state.wave+' completada! +'+bonus+' monedas'+nextBoss);
+    }
+  }
+
+  updateHUD();
+}
+
+function getTheme(){
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--color-background-primary').trim();
+  return bg.includes('0,0,0') || (bg.startsWith('rgb') && parseInt(bg.split('(')[1])<100) ? 'dark' : 'light';
+}
+
+function draw(){
+  const dark = getTheme() === 'dark';
+  const pathColor  = dark ? '#3a3228' : '#e8d5b0';
+  const grassColor = dark ? '#1e2a1e' : '#e8f0d8';
+  const gridColor  = dark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
+
+  ctx.fillStyle = grassColor;
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    ctx.strokeStyle = gridColor;
+    ctx.strokeRect(c*CW,r*CH,CW,CH);
+  }
+
+  PATH.forEach(([c,r])=>{
+    ctx.fillStyle = pathColor;
+    ctx.fillRect(c*CW,r*CH,CW,CH);
+  });
+
+  // Inicio (verde) y fin (rojo)
+  ctx.fillStyle = '#5DCAA5';
+  ctx.beginPath(); ctx.arc(PATH[0][0]*CW+CW/2, PATH[0][1]*CH+CH/2, CW*0.4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#D85A30';
+  ctx.beginPath(); ctx.arc(PATH[PATH.length-1][0]*CW+CW/2, PATH[PATH.length-1][1]*CH+CH/2, CW*0.4,0,Math.PI*2); ctx.fill();
+
+  // Torres
+  state.towers.forEach(t=>{
+    const tp = TOWER_TYPES[t.type];
+    const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
+    if(t.showRange){
+      ctx.strokeStyle = tp.color+'66';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(tx,ty,tp.range*CW,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.fillStyle = tp.color;
+    ctx.beginPath(); ctx.arc(tx,ty,CW*0.38,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.round(CW*0.3)}px var(--font-sans)`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(tp.label, tx, ty);
+    ctx.lineWidth=1;
+  });
+
+  // Enemigos con barra de vida y texto HP/maxHP
+  state.enemies.forEach(e=>{
+    const pos = pathPos(e.t);
+    if(!pos) return;
+
+    const isBoss = e.isBoss;
+    // Radio según tipo
+    const r = isBoss ? CW*0.52 : (e.maxHp > 50 ? CW*0.36 : CW*0.26);
+
+    // Cuerpo del enemigo
+    if(isBoss){
+      // Jefe: anillo exterior dorado + relleno morado
+      ctx.fillStyle = '#7B2FBE';
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.stroke();
+      ctx.lineWidth = 1;
+      // Letra J en el jefe
+      ctx.fillStyle = '#FFD700';
+      ctx.font = `bold ${Math.round(CW*0.38)}px var(--font-sans)`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('J', pos.x, pos.y);
+    } else {
+      ctx.fillStyle = e.maxHp > 50 ? '#A32D2D' : '#D85A30';
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Barra de vida
+    const bw = Math.max(r*2.6, 24);
+    const bh = isBoss ? 7 : 5;
+    const bx = pos.x - bw/2;
+    const by = pos.y - r - (isBoss ? 17 : 13);
+    const hpRatio = Math.max(0, e.hp / e.maxHp);
+
+    ctx.fillStyle = dark ? '#444' : '#999';
+    ctx.fillRect(bx, by, bw, bh);
+
+    // Color de la barra según % vida
+    const barColor = hpRatio > 0.6 ? '#5DCAA5' : hpRatio > 0.3 ? '#E8A020' : '#D85A30';
+    ctx.fillStyle = isBoss ? '#FFD700' : barColor;
+    ctx.fillRect(bx, by, bw * hpRatio, bh);
+
+    // Texto HP: "actual / máximo"
+    const hpDisplay = Math.ceil(e.hp) + '/' + e.maxHp;
+    ctx.fillStyle = dark ? '#ddd' : '#222';
+    ctx.font = `${isBoss ? Math.round(CW*0.27) : Math.round(CW*0.21)}px var(--font-sans)`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(hpDisplay, pos.x, by - 1);
+  });
+
+  // Balas
+  state.bullets.forEach(b=>{
+    ctx.fillStyle = b.color;
+    ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fill();
+  });
+
+  // Pantalla final
+  if(state.gameOver || state.victory){
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = `500 ${Math.round(CW*1.2)}px var(--font-sans)`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(state.victory ? '¡Victoria!' : 'Game Over', canvas.width/2, canvas.height/2 - 12);
+    ctx.font = `${Math.round(CW*0.55)}px var(--font-sans)`;
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText('Oleada ' + state.wave, canvas.width/2, canvas.height/2 + 22);
+  }
+
+  ctx.lineWidth=1;
+}
+
+let animId;
+function loop(){ update(); draw(); animId=requestAnimationFrame(loop); }
+
+canvas.addEventListener('click', e=>{
+  if(state.gameOver||state.victory) return;
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const my=(e.clientY-rect.top)*(canvas.height/rect.height);
+  const col=Math.floor(mx/CW), row=Math.floor(my/CH);
+  const key=col+','+row;
+
+  if(state.sellMode){
+    const idx=state.towers.findIndex(t=>t.col===col&&t.row===row);
+    if(idx>=0){
+      const refund=Math.floor(TOWER_TYPES[state.towers[idx].type].cost*0.5);
+      state.coins+=refund;
+      state.towers.splice(idx,1);
+      setMsg('Torre vendida (+'+refund+' monedas)');
+    }
+    return;
+  }
+
+  const tp=TOWER_TYPES[state.selectedType];
+  if(PATH_SET.has(key)){ setMsg('No puedes construir en el camino'); return; }
+  if(state.towers.find(t=>t.col===col&&t.row===row)){ setMsg('Ya hay una torre aqui'); return; }
+  if(state.coins<tp.cost){ setMsg('No tienes suficientes monedas'); return; }
+  state.coins-=tp.cost;
+  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false});
+  setMsg('Torre colocada');
+  updateHUD();
+});
+
+canvas.addEventListener('mousemove', e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const my=(e.clientY-rect.top)*(canvas.height/rect.height);
+  const col=Math.floor(mx/CW), row=Math.floor(my/CH);
+  state.towers.forEach(t=>{ t.showRange=t.col===col&&t.row===row; });
+});
+
+document.querySelectorAll('.tbtn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    state.selectedType=btn.dataset.type;
+    state.sellMode=false;
+    document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sellBtn').classList.remove('active');
+  });
+});
+
+document.getElementById('startBtn').addEventListener('click', startWave);
+document.getElementById('sellBtn').addEventListener('click',()=>{
+  state.sellMode=!state.sellMode;
+  document.getElementById('sellBtn').classList.toggle('active',state.sellMode);
+  setMsg(state.sellMode ? 'Clic en una torre para venderla (50% devuelto)' : 'Modo venta desactivado');
+});
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+loop();
+</script>
