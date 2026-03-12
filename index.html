@@ -1,8 +1,8 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-sans);}
-#wrap{padding:1rem 0;}
+body{font-family:var(--font-sans);display:flex;justify-content:center;}
+#wrap{padding:1rem;max-width:580px;width:100%;}
 #hud{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;}
 .stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;color:var(--color-text-secondary);min-width:90px;}
 .stat .label{font-size:11px;margin-bottom:4px;}
@@ -55,6 +55,7 @@ button:disabled{opacity:0.4;cursor:default;}
   <canvas id="canvas" width="560" height="400"></canvas>
   <div id="controls">
     <button id="startBtn">Iniciar oleada</button>
+    <button id="autoBtn">Automatico: OFF</button>
     <button id="sellBtn">Vender torre (clic en torre)</button>
     <button id="resetBtn">Reiniciar</button>
   </div>
@@ -90,11 +91,12 @@ let state = {
   waveRunning:false, spawning:false,
   spawnQueue:[],spawnTimer:0,
   selectedType:'basic', sellMode:false,
-  gameOver:false, victory:false
+  gameOver:false, victory:false, autoWave:false
 };
 
 function resetGame(){
-  state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false};
+  const auto = state.autoWave;
+  state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto};
   document.getElementById('sellBtn').classList.remove('active');
   updateHUD();
 }
@@ -263,7 +265,16 @@ function update(){
       state.coins += bonus;
       const nextBoss = state.wave % 10 === 9 ? ' — Próxima: ¡JEFE!' : '';
       setMsg('Oleada '+state.wave+' completada! +'+bonus+' monedas'+nextBoss);
+      if(state.autoWave){
+        state.autoTimer = 180; // 3 segundos a 60fps
+      }
     }
+  }
+
+  // Cuenta atrás automática
+  if(state.autoTimer > 0){
+    state.autoTimer--;
+    if(state.autoTimer === 0) startWave();
   }
 
   updateHUD();
@@ -442,6 +453,13 @@ document.querySelectorAll('.tbtn').forEach(btn=>{
 });
 
 document.getElementById('startBtn').addEventListener('click', startWave);
+document.getElementById('autoBtn').addEventListener('click',()=>{
+  state.autoWave = !state.autoWave;
+  state.autoTimer = 0;
+  const btn = document.getElementById('autoBtn');
+  btn.textContent = 'Automatico: ' + (state.autoWave ? 'ON' : 'OFF');
+  btn.classList.toggle('active', state.autoWave);
+});
 document.getElementById('sellBtn').addEventListener('click',()=>{
   state.sellMode=!state.sellMode;
   document.getElementById('sellBtn').classList.toggle('active',state.sellMode);
