@@ -229,15 +229,24 @@ function update(){
 
   // Mover balas
   state.bullets.forEach(b=>{
-    const dx=b.tx-b.x, dy=b.ty-b.y, d=Math.sqrt(dx*dx+dy*dy);
-    if(d < b.speed){ b.hit=true; return; }
-    b.x += dx/d*b.speed; b.y += dy/d*b.speed;
     const e = state.enemies.find(e=>e.id===b.target);
+    // Actualizar destino al enemigo en movimiento
     if(e && !e.dead){
       const pos = pathPos(e.t);
       if(pos){ b.tx=pos.x; b.ty=pos.y; }
-      if(d<8){ b.hit=true; e.hp-=b.dmg; if(e.hp<=0){ e.dead=true; state.coins+=e.reward; } }
-    } else { b.hit=true; }
+    }
+    const dx=b.tx-b.x, dy=b.ty-b.y, d=Math.sqrt(dx*dx+dy*dy);
+    // Si la bala llega al destino: aplicar daño
+    if(d <= b.speed){
+      b.hit=true;
+      if(e && !e.dead){
+        e.hp -= b.dmg;
+        if(e.hp<=0){ e.dead=true; state.coins+=e.reward; }
+      }
+      return;
+    }
+    b.x += dx/d*b.speed; b.y += dy/d*b.speed;
+    if(!e || e.dead) b.hit=true;
   });
 
   state.enemies = state.enemies.filter(e=>!e.dead);
