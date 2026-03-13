@@ -630,6 +630,183 @@ function startWave(){
 function setMsg(t){ document.getElementById('msg').textContent = t; }
 function dist(ax,ay,bx,by){ return Math.sqrt((ax-bx)**2+(ay-by)**2); }
 
+// Ángulo de movimiento de un enemigo en su posición t del camino
+function enemyAngle(t){
+  const idx = Math.floor(t);
+  if(idx >= PATH.length-1) return 0;
+  const [c1,r1] = PATH[idx];
+  const [c2,r2] = PATH[Math.min(idx+1, PATH.length-1)];
+  return Math.atan2(r2-r1, c2-c1);
+}
+
+// ── DIBUJO: Soldado militar top-down ──
+function drawSoldier(ctx, tx, ty, type, angle, r){
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
+
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1e5e3a' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#246b44' : '#6b5020';
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath(); ctx.ellipse(r*0.1,r*0.18,r*0.7,r*0.58,0,0,Math.PI*2); ctx.fill();
+
+  // Torso/chaleco
+  ctx.fillStyle = vc;
+  ctx.beginPath(); ctx.ellipse(0,r*0.16,r*0.56,r*0.5,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,-r*0.08); ctx.lineTo(0,r*0.38); ctx.stroke();
+
+  // Hombros
+  ctx.fillStyle = vc;
+  ctx.beginPath(); ctx.ellipse(-r*0.58,r*0.04,r*0.26,r*0.16,-0.35,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse( r*0.58,r*0.04,r*0.26,r*0.16, 0.35,0,Math.PI*2); ctx.fill();
+
+  // Casco
+  ctx.fillStyle = hc;
+  ctx.beginPath(); ctx.arc(0,-r*0.1,r*0.44,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(0,-r*0.1,r*0.44,0,Math.PI*2); ctx.stroke();
+  // Visera delantera
+  ctx.fillStyle='rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.ellipse(0,-r*0.49,r*0.28,r*0.09,0,0,Math.PI*2); ctx.fill();
+  // Cara
+  ctx.fillStyle='#c8825a';
+  ctx.beginPath(); ctx.ellipse(0,-r*0.05,r*0.26,r*0.16,0,0,Math.PI*2); ctx.fill();
+
+  // Arma (apunta hacia arriba en espacio local = hacia el enemigo)
+  ctx.fillStyle = '#2a2a2a';
+  if(type==='basic'){
+    // Rifle largo
+    ctx.fillRect(-r*0.07,-r*1.68,r*0.14,r*1.08);
+    ctx.fillStyle='#444';
+    ctx.fillRect(-r*0.16,-r*0.92,r*0.32,r*0.24);
+    ctx.fillStyle='#222';
+    ctx.fillRect(-r*0.06,-r*0.98,r*0.12,r*0.08);
+  } else if(type==='fast'){
+    // Pistola corta
+    ctx.fillRect(-r*0.1,-r*1.1,r*0.2,r*0.7);
+    ctx.fillStyle='#555';
+    ctx.fillRect(-r*0.15,-r*0.58,r*0.3,r*0.22);
+    ctx.fillStyle='#333';
+    ctx.fillRect(-r*0.07,-r*0.63,r*0.14,r*0.07);
+  } else {
+    // Cañón ancho
+    ctx.fillStyle='#666';
+    ctx.fillRect(-r*0.2,-r*1.82,r*0.4,r*1.28);
+    ctx.fillStyle='#888';
+    ctx.fillRect(-r*0.23,-r*1.62,r*0.46,r*0.1);
+    ctx.fillRect(-r*0.23,-r*1.28,r*0.46,r*0.1);
+    ctx.fillStyle='#777';
+    ctx.beginPath(); ctx.arc(0,-r*1.82,r*0.22,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#555';
+    ctx.fillRect(-r*0.28,-r*0.68,r*0.56,r*0.36);
+  }
+  ctx.lineWidth=1;
+  ctx.restore();
+}
+
+// ── DIBUJO: Zombie top-down ──
+function drawZombie(ctx, px, py, e, r){
+  const isBoss = e.kind==='boss';
+  const ma = enemyAngle(e.t);
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(ma + Math.PI/2); // zombie mira hacia donde se mueve
+
+  const zc = {
+    normal:{body:'#5a7030',flesh:'#7a9a40',rot:'#3a5018',cloth:'#6a5838'},
+    fast:  {body:'#4a6028',flesh:'#8aaa48',rot:'#2a4010',cloth:'#504830'},
+    heavy: {body:'#6a7840',flesh:'#6a8830',rot:'#404a18',cloth:'#7a6050'},
+    boss:  {body:'#384020',flesh:'#587228',rot:'#202810',cloth:'#503828'},
+  }[e.kind]||{body:'#5a7030',flesh:'#7a9a40',rot:'#3a5018',cloth:'#6a5838'};
+
+  // Sombra
+  ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(r*0.1,r*0.2,r*0.78,r*0.62,0,0,Math.PI*2); ctx.fill();
+
+  // Cuerpo (ropa rasgada)
+  ctx.fillStyle=zc.cloth;
+  ctx.beginPath(); ctx.ellipse(0,r*0.18,r*0.62,r*0.52,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.28)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-r*0.14,-r*0.06); ctx.lineTo(-r*0.04,r*0.28); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r*0.1,r*0.05); ctx.lineTo(r*0.2,r*0.34); ctx.stroke();
+
+  // Brazos (extendidos hacia adelante — estilo zombie)
+  [[-1,0.38],[ 1,-0.38]].forEach(([side, rot])=>{
+    ctx.save();
+    ctx.translate(side*r*0.68, -r*0.04);
+    ctx.rotate(rot);
+    ctx.fillStyle=zc.flesh;
+    ctx.beginPath(); ctx.ellipse(0,0,r*0.19,r*0.36,0,0,Math.PI*2); ctx.fill();
+    // Mano/garra
+    ctx.beginPath(); ctx.arc(0,-r*0.36,r*0.15,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,0.4)'; ctx.lineWidth=0.8;
+    [[-0.09,-0.48,-0.13,-0.57],[0,-0.5,0,-0.59],[0.09,-0.48,0.13,-0.57]].forEach(([x1,y1,x2,y2])=>{
+      ctx.beginPath(); ctx.moveTo(x1*r,y1*r); ctx.lineTo(x2*r,y2*r); ctx.stroke();
+    });
+    ctx.restore();
+  });
+
+  // Cabeza
+  const hr = r*(isBoss?0.47:0.39);
+  ctx.fillStyle=zc.flesh;
+  ctx.beginPath(); ctx.arc(0,-r*0.2,hr,0,Math.PI*2); ctx.fill();
+  // Manchas de podredumbre
+  ctx.fillStyle=zc.rot;
+  ctx.beginPath(); ctx.arc(-r*0.14,-r*0.3,r*0.09,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( r*0.17,-r*0.1,r*0.06,0,Math.PI*2); ctx.fill();
+  if(isBoss){ ctx.beginPath(); ctx.arc(r*0.04,-r*0.4,r*0.08,0,Math.PI*2); ctx.fill(); }
+
+  // Ojos
+  const ey=-r*0.23, ex=r*0.15;
+  if(isBoss){
+    ctx.strokeStyle='#ff3333'; ctx.lineWidth=2;
+    ctx.shadowColor='#ff0000'; ctx.shadowBlur=5;
+    const s=r*0.11;
+    [-ex,ex].forEach(x=>{
+      ctx.beginPath(); ctx.moveTo(x-s,ey-s); ctx.lineTo(x+s,ey+s); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+s,ey-s); ctx.lineTo(x-s,ey+s); ctx.stroke();
+    });
+    ctx.shadowBlur=0;
+  } else {
+    ctx.fillStyle='#e4e4d4';
+    ctx.beginPath(); ctx.arc(-ex,ey,r*0.1,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( ex,ey,r*0.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.arc(-ex+r*0.02,ey,r*0.055,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( ex+r*0.02,ey,r*0.055,0,Math.PI*2); ctx.fill();
+  }
+
+  // Boca
+  ctx.strokeStyle='#2a0808'; ctx.lineWidth=1.2;
+  ctx.beginPath();
+  if(isBoss){
+    const teeth=[-0.26,-0.16,-0.06,0.04,0.14,0.24];
+    ctx.moveTo(-r*0.28,-r*0.06);
+    teeth.forEach((x,i)=>ctx.lineTo(r*x, i%2===0?-r*0.13:-r*0.04));
+    ctx.lineTo(r*0.28,-r*0.06);
+  } else {
+    ctx.arc(0,-r*0.08,r*0.15,0.25,Math.PI-0.25);
+  }
+  ctx.stroke();
+  // Baba
+  ctx.fillStyle='#4a9922';
+  ctx.beginPath(); ctx.arc(r*0.05,r*0.04,r*0.04,0,Math.PI*2); ctx.fill();
+
+  // Cuernos del jefe
+  if(isBoss){
+    ctx.fillStyle='#1a3a10';
+    [[-1],[1]].forEach(([s])=>{
+      ctx.beginPath();
+      ctx.moveTo(s*r*0.26,-r*0.56); ctx.lineTo(s*r*0.16,-r*0.88); ctx.lineTo(s*r*0.07,-r*0.6);
+      ctx.closePath(); ctx.fill();
+    });
+  }
+  ctx.lineWidth=1; ctx.restore();
+}
+
 function update(){
   if(state.gameOver || state.victory) return;
 
@@ -673,6 +850,8 @@ function update(){
     });
     if(target){
       const pos = pathPos(target.t);
+      // Rotar el soldado hacia el enemigo
+      t.angle = Math.atan2(pos.y - ty, pos.x - tx);
       state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:tp.dmg,color:tp.bullet,speed:6});
       t.cd = tp.fireRate;
     }
@@ -760,25 +939,23 @@ function draw(){
   ctx.fillStyle = '#D85A30';
   ctx.beginPath(); ctx.arc(PATH[PATH.length-1][0]*CW+CW/2, PATH[PATH.length-1][1]*CH+CH/2, CW*0.4,0,Math.PI*2); ctx.fill();
 
-  // Torres
+  // Torres — soldados militares top-down
   state.towers.forEach(t=>{
     const tp = TOWER_TYPES[t.type];
     const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
+    const r = CW*0.38;
     if(t.showRange){
-      ctx.strokeStyle = tp.color+'66';
+      ctx.strokeStyle = tp.color+'55';
       ctx.lineWidth=1;
+      ctx.setLineDash([4,3]);
       ctx.beginPath(); ctx.arc(tx,ty,tp.range*CW,0,Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
     }
-    ctx.fillStyle = tp.color;
-    ctx.beginPath(); ctx.arc(tx,ty,CW*0.38,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${Math.round(CW*0.3)}px var(--font-sans)`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(tp.label, tx, ty);
+    drawSoldier(ctx, tx, ty, t.type, t.angle ?? -Math.PI/2, r);
     ctx.lineWidth=1;
   });
 
-  // Enemigos con barra de vida y texto HP/maxHP
+  // Enemigos — zombies top-down con barra de vida
   state.enemies.forEach(e=>{
     const pos = pathPos(e.t);
     if(!pos) return;
@@ -787,43 +964,29 @@ function draw(){
     const isBoss = e.kind === 'boss';
     const r = CW * k.radius;
 
-    // Cuerpo
-    ctx.fillStyle = k.color;
-    ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.fill();
-
-    // Anillo borde para el jefe
-    if(k.border){
-      ctx.strokeStyle = k.border;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(pos.x, pos.y, r, 0, Math.PI*2); ctx.stroke();
-      ctx.lineWidth = 1;
-    }
-
-    // Letra identificadora
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${Math.round(CW * (isBoss ? 0.34 : 0.26))}px var(--font-sans)`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText(k.label, pos.x, pos.y);
+    drawZombie(ctx, pos.x, pos.y, e, r);
 
     // Barra de vida
-    const bw = Math.max(r*2.6, 22);
+    const bw = Math.max(r*2.8, 24);
     const bh = isBoss ? 7 : 5;
     const bx = pos.x - bw/2;
-    const by = pos.y - r - (isBoss ? 16 : 12);
+    const by = pos.y - r - (isBoss ? 20 : 16);
     const hpRatio = Math.max(0, e.hp / e.maxHp);
 
-    ctx.fillStyle = dark ? '#444' : '#999';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(bx-1, by-1, bw+2, bh+2);
+    ctx.fillStyle = '#333';
     ctx.fillRect(bx, by, bw, bh);
     const barColor = hpRatio > 0.6 ? '#5DCAA5' : hpRatio > 0.3 ? '#E8A020' : '#EE3333';
     ctx.fillStyle = barColor;
     ctx.fillRect(bx, by, bw * hpRatio, bh);
 
-    // Texto HP: "actual/máximo"
+    // Texto HP
     const hpDisplay = Math.ceil(e.hp) + '/' + e.maxHp;
-    ctx.fillStyle = dark ? '#ddd' : '#222';
-    ctx.font = `${Math.round(CW * (isBoss ? 0.26 : 0.20))}px var(--font-sans)`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
-    ctx.fillText(hpDisplay, pos.x, by - 1);
+    ctx.fillStyle = '#fff';
+    ctx.font = `${Math.round(CW*(isBoss?0.24:0.18))}px var(--font-sans)`;
+    ctx.textAlign='center'; ctx.textBaseline='bottom';
+    ctx.fillText(hpDisplay, pos.x, by - 2);
   });
 
   // Balas
@@ -875,7 +1038,7 @@ canvas.addEventListener('click', e=>{
   if(state.towers.find(t=>t.col===col&&t.row===row)){ setMsg('Ya hay una torre aqui'); return; }
   if(state.coins<tp.cost){ setMsg('No tienes suficientes monedas'); return; }
   state.coins-=tp.cost;
-  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false});
+  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false,angle:-Math.PI/2});
   setMsg('Torre colocada');
   updateHUD();
 });
