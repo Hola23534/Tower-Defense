@@ -38,25 +38,56 @@ body{font-family:var(--font-sans);display:flex;justify-content:center;min-height
 
 /* ── GAME ── */
 #screen-game{padding:1rem;max-width:580px;width:100%;}
-#hud{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;}
-.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;color:var(--color-text-secondary);min-width:90px;}
-.stat .label{font-size:11px;margin-bottom:4px;}
-.stat .val{font-size:16px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;}
-.bar-bg{height:6px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;}
-.bar-fill{height:100%;border-radius:3px;transition:width 0.2s;}
-#bar-lives{background:#D85A30;}
+#hud{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:stretch;}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 12px;font-size:13px;color:var(--color-text-secondary);min-width:84px;}
+.stat .label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.stat .val{font-size:16px;font-weight:600;color:var(--color-text-primary);margin-bottom:4px;}
+.bar-bg{height:5px;border-radius:3px;background:var(--color-border-tertiary);overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width 0.25s;}
+#bar-lives{background:#E74C3C;}
 #bar-coins{background:#E8A020;}
 #bar-wave{background:#5DCAA5;}
-#msg{flex:1;font-size:13px;color:var(--color-text-secondary);min-width:120px;display:flex;align-items:center;}
-#canvas{display:block;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);cursor:crosshair;width:100%;max-width:560px;}
-#controls{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;}
-button{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;}
+#msg{flex:1;font-size:12px;color:var(--color-text-secondary);min-width:120px;display:flex;align-items:center;font-style:italic;}
+#canvas{display:block;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:crosshair;width:100%;max-width:560px;}
+
+/* ── BOTONES BASE ── */
+button{font-size:13px;padding:8px 14px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;transition:background .15s,border-color .15s,transform .1s;}
 button:hover{background:var(--color-background-secondary);}
-button:active{transform:scale(0.98);}
-button:disabled{opacity:0.4;cursor:default;}
+button:active{transform:scale(0.97);}
+button:disabled{opacity:0.35;cursor:default;}
+
+/* ── CONTROLES ── */
+#controls{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+
+/* Iniciar oleada — acento verde */
+#startBtn{background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-weight:600;}
+#startBtn:hover:not(:disabled){background:#1e9458;border-color:#1e9458;}
+#startBtn:disabled{background:transparent;color:var(--color-text-secondary);border-color:var(--color-border-secondary);}
+
+/* Automático — toggle azul */
+#autoBtn{border-color:var(--color-border-secondary);}
+#autoBtn.active{background:#1a4f8a;border-color:#1a4f8a;color:#fff;}
+#autoBtn.active:hover{background:#1f5fa6;}
+
+/* Vender — toggle naranja */
+#sellBtn{border-color:var(--color-border-secondary);}
+#sellBtn.active{background:#7a4a10;border-color:#c47820;color:#f0a830;}
+#sellBtn.active:hover{background:#8a5518;}
+
+/* Reiniciar — neutro */
+#resetBtn{color:var(--color-text-secondary);}
+#resetBtn:hover{color:var(--color-text-primary);}
+
+/* Separador visual */
+.ctrl-sep{flex:1;}
+
+/* Regresar al menú — rojo suave, ancho completo abajo */
+#menuBtn{width:100%;margin-top:8px;padding:10px;font-size:13px;color:#c0392b;border-color:#c0392b44;border-radius:var(--border-radius-md);}
+#menuBtn:hover{background:#c0392b18;border-color:#c0392b;}
+
 /* ── TOWER ICON BUTTONS ── */
 #tower-select{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
-.tbtn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--border-radius-md);border:1.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;font-size:12px;}
+.tbtn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--border-radius-md);border:1.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;font-size:12px;transition:background .15s,border-color .15s;}
 .tbtn.active{background:var(--color-background-info);border-color:var(--color-border-info);}
 .tbtn:hover{background:var(--color-background-secondary);}
 .tower-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
@@ -167,14 +198,13 @@ button:disabled{opacity:0.4;cursor:default;}
   </div>
   <canvas id="canvas" width="560" height="400"></canvas>
   <div id="controls">
-    <button id="startBtn">Iniciar oleada</button>
-    <button id="autoBtn">Automatico: OFF</button>
-    <button id="sellBtn">Vender torre (clic en torre)</button>
-    <button id="resetBtn">Reiniciar</button>
+    <button id="startBtn">▶ Iniciar oleada</button>
+    <button id="autoBtn">⏩ Automático: OFF</button>
+    <button id="sellBtn">💰 Vender torre</button>
+    <div class="ctrl-sep"></div>
+    <button id="resetBtn">↺ Reiniciar</button>
   </div>
-  <div style="margin-top:10px;">
-    <button id="menuBtn" style="width:100%;font-size:13px;">← Regresar al menú principal</button>
-  </div>
+  <button id="menuBtn">← Regresar al menú principal</button>
 </div>
 <script>
 // ── SCREEN NAVIGATION ──
