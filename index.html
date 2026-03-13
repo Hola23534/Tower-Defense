@@ -362,7 +362,7 @@ button:disabled{opacity:0.3;cursor:default;}
       <div><b>Básica</b> — 50💰 · 1 dmg · velocidad normal</div>
     </div>
     <div class="expl-row">
-      <div class="expl-dot" style="background:#3B6D11">R</div>
+      <div class="expl-dot" style="background:#1a5fa0">R</div>
       <div><b>Rápida</b> — 80💰 · 0.7 dmg · ataca muy rápido</div>
     </div>
     <div class="expl-row">
@@ -432,7 +432,7 @@ button:disabled{opacity:0.3;cursor:default;}
       </div>
     </button>
     <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
-      <div class="tower-icon" style="background:#3B6D11">R</div>
+      <div class="tower-icon" style="background:#1a5fa0">R</div>
       <div class="tbtn-info">
         <span class="tbtn-name">Rápida</span>
         <span class="tbtn-stats">80💰 · 0.7 dmg</span>
@@ -532,7 +532,7 @@ const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
   basic: {color:'#185FA5', range:2.5, fireRate:60,  dmg:1,   cost:50,  bullet:'#378ADD', label:'B'},
-  fast:  {color:'#3B6D11', range:2.0, fireRate:28,  dmg:0.7, cost:80,  bullet:'#639922', label:'R'},
+  fast:  {color:'#1a5fa0', range:2.0, fireRate:28,  dmg:0.7, cost:80,  bullet:'#5aaaf0', label:'R'},
   heavy: {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120, bullet:'#D85A30', label:'P'},
 };
 
@@ -540,7 +540,7 @@ const TOWER_TYPES = {
 function resetGame(){
   const auto = state ? state.autoWave : false;
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
-  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg};
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182};
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
@@ -645,8 +645,8 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.translate(tx, ty);
   ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
 
-  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1e5e3a' : '#5a4018';
-  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#246b44' : '#6b5020';
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : '#6b5020';
 
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -895,7 +895,7 @@ function update(){
       const nextBoss = state.wave % 10 === 9 ? ' — Próxima: ¡JEFE!' : '';
       setMsg('Oleada '+state.wave+' completada! +'+bonus+' monedas'+nextBoss);
       if(state.autoWave){
-        state.autoTimer = 180; // 3 segundos a 60fps
+        state.autoTimer = 8; // casi instantáneo
       }
     }
   }
@@ -905,6 +905,30 @@ function update(){
     state.autoTimer--;
     if(state.autoTimer === 0) startWave();
   }
+
+  // Intro "SOBREVIVE"
+  if(state.introTimer > 0){
+    state.introTimer--;
+    // Al terminar (frame 0) lanzar explosión de partículas naranjas
+    if(state.introTimer === 0){
+      const cx = canvas.width/2, cy = canvas.height/2;
+      for(let i=0;i<36;i++){
+        const angle = (i/36)*Math.PI*2;
+        const spd = 2.5 + Math.random()*4;
+        state.particles.push({
+          x:cx, y:cy,
+          vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd,
+          life:1.0, decay: 0.022+Math.random()*0.018,
+          r: 3+Math.random()*5,
+          color: Math.random()<0.6 ? '#FF8C00' : (Math.random()<0.5 ? '#FF4500' : '#FFD700')
+        });
+      }
+    }
+  }
+
+  // Partículas
+  state.particles.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.vx*=0.93; p.vy*=0.93; p.life-=p.decay; });
+  state.particles = state.particles.filter(p=>p.life>0);
 
   updateHUD();
 }
@@ -994,6 +1018,46 @@ function draw(){
     ctx.fillStyle = b.color;
     ctx.beginPath(); ctx.arc(b.x,b.y,3,0,Math.PI*2); ctx.fill();
   });
+
+  // Partículas de explosión
+  state.particles && state.particles.forEach(p=>{
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r*p.life, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  });
+
+  // Intro "SOBREVIVE"
+  if(state.introTimer > 0){
+    const prog = state.introTimer / 182; // 1→0
+    // fade in rápido, stay, fade out al final
+    const alpha = prog > 0.85 ? ((1-prog)/0.15) :   // fade in primeros 0.15
+                  prog < 0.15 ? (prog/0.15) :         // fade out últimos 0.15
+                  1;
+    const scale = 1 + (1-Math.min(1,(1-prog)*6))*0.3; // pequeño zoom al entrar
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, alpha*0.85);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.globalAlpha = Math.min(1, alpha);
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.scale(scale, scale);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    // Sombra / glow
+    ctx.shadowColor='#FF6600'; ctx.shadowBlur=28;
+    ctx.fillStyle='#FF8C00';
+    ctx.font=`900 ${Math.round(CW*2.2)}px var(--font-sans)`;
+    ctx.fillText('¡SOBREVIVE!', 0, 0);
+    ctx.shadowBlur=0;
+    // Contorno blanco
+    ctx.strokeStyle='rgba(255,255,255,0.6)';
+    ctx.lineWidth=2;
+    ctx.strokeText('¡SOBREVIVE!', 0, 0);
+    ctx.restore();
+  }
 
   // Pantalla final
   if(state.gameOver || state.victory){
