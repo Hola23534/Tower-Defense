@@ -369,6 +369,10 @@ button:disabled{opacity:0.3;cursor:default;}
       <div class="expl-dot" style="background:#712B13">P</div>
       <div><b>Pesada</b> — 120💰 · 3 dmg · disparo lento y potente</div>
     </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
+      <div><b>Élite</b> — 1000💰 · 4 dmg · uniforme blanco, velocidad normal</div>
+    </div>
   </div>
 
   <div class="expl-card">
@@ -443,6 +447,13 @@ button:disabled{opacity:0.3;cursor:default;}
       <div class="tbtn-info">
         <span class="tbtn-name">Pesada</span>
         <span class="tbtn-stats">120💰 · 3 dmg</span>
+      </div>
+    </button>
+    <button class="tbtn" data-type="elite" title="Élite: 4 dmg, velocidad normal, coste alto">
+      <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Élite</span>
+        <span class="tbtn-stats">1000💰 · 4 dmg</span>
       </div>
     </button>
   </div>
@@ -531,9 +542,10 @@ const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
-  basic: {color:'#185FA5', range:2.5, fireRate:60,  dmg:1,   cost:50,  bullet:'#378ADD', label:'B'},
-  fast:  {color:'#1a5fa0', range:2.0, fireRate:28,  dmg:0.7, cost:80,  bullet:'#5aaaf0', label:'R'},
-  heavy: {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120, bullet:'#D85A30', label:'P'},
+  basic:  {color:'#185FA5', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B'},
+  fast:   {color:'#1a5fa0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R'},
+  heavy:  {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P'},
+  elite:  {color:'#e8e8e8', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E'},
 };
 
 
@@ -645,8 +657,8 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.translate(tx, ty);
   ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
 
-  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : '#5a4018';
-  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : '#6b5020';
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : '#6b5020';
 
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -675,6 +687,24 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.fillStyle='#c8825a';
   ctx.beginPath(); ctx.ellipse(0,-r*0.05,r*0.26,r*0.16,0,0,Math.PI*2); ctx.fill();
 
+  // Élite: estrella de rango en el casco
+  if(type==='elite'){
+    ctx.fillStyle='#f0c030';
+    for(let i=0;i<5;i++){
+      const a=-Math.PI/2+(i*Math.PI*2/5);
+      const bA=a+Math.PI/5;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*r*0.22+0, Math.sin(a)*r*0.22-r*0.1);
+      ctx.lineTo(Math.cos(bA)*r*0.1+0, Math.sin(bA)*r*0.1-r*0.1);
+      if(i===0) ctx.moveTo(Math.cos(a)*r*0.22, Math.sin(a)*r*0.22-r*0.1);
+    }
+    // dibujar estrella sencilla con arc
+    ctx.fillStyle='#f0c030';
+    ctx.font=`bold ${Math.round(r*0.38)}px sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('★', 0, -r*0.1);
+  }
+
   // Arma (apunta hacia arriba en espacio local = hacia el enemigo)
   ctx.fillStyle = '#2a2a2a';
   if(type==='basic'){
@@ -691,6 +721,14 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
     ctx.fillRect(-r*0.15,-r*0.58,r*0.3,r*0.22);
     ctx.fillStyle='#333';
     ctx.fillRect(-r*0.07,-r*0.63,r*0.14,r*0.07);
+  } else if(type==='elite'){
+    // Rifle de élite — dorado con cuerpo plateado
+    ctx.fillStyle='#b8a000';
+    ctx.fillRect(-r*0.07,-r*1.78,r*0.14,r*1.18); // cañón dorado largo
+    ctx.fillStyle='#d4d4d4';
+    ctx.fillRect(-r*0.18,-r*0.98,r*0.36,r*0.26); // cuerpo plateado
+    ctx.fillStyle='#f0c030';
+    ctx.fillRect(-r*0.06,-r*1.04,r*0.12,r*0.08); // detalle dorado
   } else {
     // Cañón ancho
     ctx.fillStyle='#666';
