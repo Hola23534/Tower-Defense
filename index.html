@@ -1,8 +1,43 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-sans);display:flex;justify-content:center;}
-#wrap{padding:1rem;max-width:580px;width:100%;}
+body{font-family:var(--font-sans);display:flex;justify-content:center;min-height:100vh;}
+
+/* ── SCREENS ── */
+.screen{display:none;width:100%;max-width:580px;padding:1.5rem;}
+.screen.active{display:block;}
+
+/* ── MENU ── */
+#screen-menu{display:flex;flex-direction:column;min-height:100vh;padding:2rem 1.5rem;}
+#screen-menu .menu-top{display:flex;flex-direction:column;gap:12px;flex:1;}
+#screen-menu .menu-bottom{display:flex;justify-content:flex-end;}
+.menu-card{border:2px solid var(--color-border-secondary);border-radius:12px;padding:16px 22px;cursor:pointer;background:transparent;font-size:15px;font-weight:500;color:var(--color-text-primary);text-align:left;transition:background 0.15s;}
+.menu-card:hover{background:var(--color-background-secondary);}
+.menu-card.lg{font-size:20px;padding:20px 26px;}
+.td-badge{border:2px solid var(--color-border-secondary);border-radius:12px;padding:18px 28px;text-align:center;}
+.td-badge .td-title{font-size:22px;font-weight:700;color:var(--color-text-primary);letter-spacing:1px;}
+.td-badge .td-sub{font-size:12px;color:var(--color-text-secondary);margin-top:4px;}
+
+/* ── DIFFICULTY / EXPLANATION ── */
+#screen-difficulty,#screen-explanation{min-height:100vh;padding:2.5rem 1.5rem;display:none;flex-direction:column;gap:16px;}
+#screen-difficulty.active,#screen-explanation.active{display:flex;}
+.screen-title{font-size:20px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px;}
+.diff-grid{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.diff-btn{border:2px solid var(--color-border-secondary);border-radius:12px;padding:18px 22px;cursor:pointer;background:transparent;text-align:left;transition:background 0.15s;}
+.diff-btn:hover{background:var(--color-background-secondary);}
+.diff-btn .d-name{font-size:16px;font-weight:600;color:var(--color-text-primary);}
+.diff-btn .d-desc{font-size:12px;color:var(--color-text-secondary);margin-top:3px;}
+.diff-btn.easy .d-name{color:#5DCAA5;}
+.diff-btn.normal .d-name{color:#E8A020;}
+.diff-btn.hard .d-name{color:#D85A30;}
+.back-btn{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 14px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);width:fit-content;}
+.back-btn:hover{background:var(--color-background-secondary);}
+.expl-text{font-size:14px;color:var(--color-text-primary);line-height:1.7;background:var(--color-background-secondary);border-radius:10px;padding:18px;}
+.expl-section{margin-bottom:10px;}
+.expl-section b{color:var(--color-text-primary);}
+
+/* ── GAME ── */
+#screen-game{padding:1rem;max-width:580px;width:100%;}
 #hud{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;}
 .stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 14px;font-size:13px;color:var(--color-text-secondary);min-width:90px;}
 .stat .label{font-size:11px;margin-bottom:4px;}
@@ -19,12 +54,72 @@ button{font-size:13px;padding:7px 14px;border-radius:var(--border-radius-md);bor
 button:hover{background:var(--color-background-secondary);}
 button:active{transform:scale(0.98);}
 button:disabled{opacity:0.4;cursor:default;}
-#tower-select{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-.tbtn{font-size:12px;padding:5px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;}
-.tbtn.active{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);}
+/* ── TOWER ICON BUTTONS ── */
+#tower-select{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+.tbtn{display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:var(--border-radius-md);border:1.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-primary);cursor:pointer;font-size:12px;}
+.tbtn.active{background:var(--color-background-info);border-color:var(--color-border-info);}
 .tbtn:hover{background:var(--color-background-secondary);}
+.tower-icon{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
+.tbtn-info{display:flex;flex-direction:column;line-height:1.3;}
+.tbtn-name{font-weight:600;font-size:12px;}
+.tbtn-stats{font-size:10px;color:var(--color-text-secondary);}
 </style>
-<div id="wrap">
+
+<!-- MENÚ PRINCIPAL -->
+<div id="screen-menu" class="active">
+  <div class="menu-top">
+    <button class="menu-card lg" id="btnJugar">Jugar</button>
+    <button class="menu-card" id="btnExplicacion">Explicación</button>
+  </div>
+  <div class="menu-bottom">
+    <div class="td-badge">
+      <div class="td-title">Tower Defense</div>
+      <div class="td-sub">100 oleadas · 4 tipos de enemigos</div>
+    </div>
+  </div>
+</div>
+
+<!-- SELECCIÓN DE DIFICULTAD -->
+<div id="screen-difficulty">
+  <button class="back-btn" id="btnBackDiff">← Volver</button>
+  <div class="screen-title">Selecciona dificultad</div>
+  <div class="diff-grid">
+    <button class="diff-btn easy" data-diff="easy">
+      <div class="d-name">Fácil</div>
+      <div class="d-desc">500 monedas iniciales · enemigos con menos vida · más bonus por oleada</div>
+    </button>
+    <button class="diff-btn normal" data-diff="normal">
+      <div class="d-name">Normal</div>
+      <div class="d-desc">300 monedas iniciales · dificultad estándar</div>
+    </button>
+    <button class="diff-btn hard" data-diff="hard">
+      <div class="d-name">Difícil</div>
+      <div class="d-desc">150 monedas iniciales · enemigos con más vida · menos bonus por oleada</div>
+    </button>
+  </div>
+</div>
+
+<!-- EXPLICACIÓN -->
+<div id="screen-explanation">
+  <button class="back-btn" id="btnBackExpl">← Volver</button>
+  <div class="screen-title">¿Cómo jugar?</div>
+  <div class="expl-text">
+    <div class="expl-section">Dale clic a las torres del menú inferior y colócalas en las <b>celdas verdes</b> del mapa para ir derrotando enemigos y generar más dinero para combatir contra los jefes.</div>
+    <div class="expl-section"><b>Torres:</b><br>
+      🔵 <b>Básica (B)</b> — equilibrada, 1 dmg, coste 50<br>
+      🟢 <b>Rápida (R)</b> — ataca muy rápido, 0.7 dmg, coste 80<br>
+      🔴 <b>Pesada (P)</b> — lenta pero potente, 3 dmg, coste 120
+    </div>
+    <div class="expl-section"><b>Enemigos (todos rojos):</b><br>
+      <b>N</b> Normal · <b>R</b> Rápido · <b>P</b> Pesado · <b>J</b> Jefe (cada 10 oleadas)
+    </div>
+    <div class="expl-section"><b>Monedas:</b> matar enemigos da monedas. Al acabar cada oleada recibes un bonus.</div>
+    <div class="expl-section"><b>Vidas:</b> si un enemigo llega al final pierdes 1 vida. Si llegas a 0, es Game Over.</div>
+  </div>
+</div>
+
+<!-- JUEGO -->
+<div id="screen-game" class="screen">
   <div id="hud">
     <div class="stat">
       <div class="label">Vidas</div>
@@ -48,9 +143,27 @@ button:disabled{opacity:0.4;cursor:default;}
     <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
   </div>
   <div id="tower-select">
-    <button class="tbtn active" data-type="basic" title="Básica — 50 monedas | 1 dmg | velocidad normal">Torre basica (50) — 1 dmg</button>
-    <button class="tbtn" data-type="fast" title="Rapida — 80 monedas | 0.7 dmg | ataca muy rápido">Torre rapida (80) — 0.7 dmg</button>
-    <button class="tbtn" data-type="heavy" title="Pesada — 120 monedas | 3 dmg | ataca lento">Torre pesada (120) — 3 dmg</button>
+    <button class="tbtn active" data-type="basic" title="Básica: 1 dmg, velocidad normal">
+      <div class="tower-icon" style="background:#185FA5">B</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Básica</span>
+        <span class="tbtn-stats">50💰 · 1 dmg</span>
+      </div>
+    </button>
+    <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
+      <div class="tower-icon" style="background:#3B6D11">R</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Rápida</span>
+        <span class="tbtn-stats">80💰 · 0.7 dmg</span>
+      </div>
+    </button>
+    <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
+      <div class="tower-icon" style="background:#712B13">P</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Pesada</span>
+        <span class="tbtn-stats">120💰 · 3 dmg</span>
+      </div>
+    </button>
   </div>
   <canvas id="canvas" width="560" height="400"></canvas>
   <div id="controls">
@@ -61,6 +174,39 @@ button:disabled{opacity:0.4;cursor:default;}
   </div>
 </div>
 <script>
+// ── SCREEN NAVIGATION ──
+const DIFF_CONFIG = {
+  easy:   {coins:500, hpMult:0.7,  bonusMult:1.5},
+  normal: {coins:300, hpMult:1.0,  bonusMult:1.0},
+  hard:   {coins:150, hpMult:1.35, bonusMult:0.6},
+};
+let currentDiff = 'normal';
+
+function showScreen(id){
+  ['screen-menu','screen-difficulty','screen-explanation','screen-game'].forEach(s=>{
+    const el = document.getElementById(s);
+    el.style.display = 'none';
+    el.classList.remove('active');
+  });
+  const target = document.getElementById(id);
+  target.style.display = (id === 'screen-difficulty' || id === 'screen-explanation') ? 'flex' : (id === 'screen-game' ? 'block' : 'flex');
+  target.classList.add('active');
+}
+
+document.getElementById('btnJugar').addEventListener('click', ()=> showScreen('screen-difficulty'));
+document.getElementById('btnExplicacion').addEventListener('click', ()=> showScreen('screen-explanation'));
+document.getElementById('btnBackDiff').addEventListener('click', ()=> showScreen('screen-menu'));
+document.getElementById('btnBackExpl').addEventListener('click', ()=> showScreen('screen-menu'));
+
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentDiff = btn.dataset.diff;
+    showScreen('screen-game');
+    resetGame();
+  });
+});
+
+// ── GAME ──
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -85,19 +231,14 @@ const TOWER_TYPES = {
   heavy: {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120, bullet:'#D85A30', label:'P'},
 };
 
-let state = {
-  lives:20, coins:300, wave:0,
-  towers:[], enemies:[], bullets:[],
-  waveRunning:false, spawning:false,
-  spawnQueue:[],spawnTimer:0,
-  selectedType:'basic', sellMode:false,
-  gameOver:false, victory:false, autoWave:false
-};
 
 function resetGame(){
-  const auto = state.autoWave;
-  state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto};
+  const auto = state ? state.autoWave : false;
+  const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg};
   document.getElementById('sellBtn').classList.remove('active');
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
   updateHUD();
 }
 
@@ -137,8 +278,9 @@ const ENEMY_KINDS = {
 function buildWaveQueue(w){
   const q = [];
   const count = Math.min(3 + Math.floor(w * 0.27), 30);
+  const hpMult = (state.diff && state.diff.hpMult) || 1;
   // HP más suave: wave 10 ≈ 16, wave 50 ≈ 56, wave 100 ≈ 106
-  const baseHp = Math.round(4 + w * 1.2);
+  const baseHp = Math.round((4 + w * 1.2) * hpMult);
   const baseSpeed = 0.012 + w * 0.00007;
   const baseReward = Math.max(2, Math.floor(2 + w * 0.3));
 
@@ -263,7 +405,8 @@ function update(){
       state.victory = true;
       setMsg('¡Victoria! Completaste las 100 oleadas!');
     } else {
-      const bonus = 20 + state.wave * 3;
+      const bonusMult = (state.diff && state.diff.bonusMult) || 1;
+      const bonus = Math.round((20 + state.wave * 3) * bonusMult);
       state.coins += bonus;
       const nextBoss = state.wave % 10 === 9 ? ' — Próxima: ¡JEFE!' : '';
       setMsg('Oleada '+state.wave+' completada! +'+bonus+' monedas'+nextBoss);
@@ -463,7 +606,11 @@ document.getElementById('sellBtn').addEventListener('click',()=>{
   document.getElementById('sellBtn').classList.toggle('active',state.sellMode);
   setMsg(state.sellMode ? 'Clic en una torre para venderla (50% devuelto)' : 'Modo venta desactivado');
 });
-document.getElementById('resetBtn').addEventListener('click', resetGame);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  showScreen('screen-menu');
+});
 
+// Estado inicial vacío — se llena al elegir dificultad
+let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal};
 loop();
 </script>
