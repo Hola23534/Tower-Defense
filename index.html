@@ -172,6 +172,9 @@ button:disabled{opacity:0.4;cursor:default;}
     <button id="sellBtn">Vender torre (clic en torre)</button>
     <button id="resetBtn">Reiniciar</button>
   </div>
+  <div style="margin-top:10px;">
+    <button id="menuBtn" style="width:100%;color:var(--color-text-secondary);font-size:12px;">← Regresar al menú principal</button>
+  </div>
 </div>
 <script>
 // ── SCREEN NAVIGATION ──
@@ -606,9 +609,8 @@ document.getElementById('sellBtn').addEventListener('click',()=>{
   document.getElementById('sellBtn').classList.toggle('active',state.sellMode);
   setMsg(state.sellMode ? 'Clic en una torre para venderla (50% devuelto)' : 'Modo venta desactivado');
 });
-document.getElementById('resetBtn').addEventListener('click', ()=>{
-  showScreen('screen-menu');
-});
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+document.getElementById('menuBtn').addEventListener('click', ()=> showScreen('screen-menu'));
 
 // Estado inicial vacío — se llena al elegir dificultad
 let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal};
