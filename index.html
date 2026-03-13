@@ -1142,6 +1142,6 @@ document.getElementById('resetBtn').addEventListener('click', resetGame);
 document.getElementById('menuBtn').addEventListener('click', ()=> showScreen('screen-menu'));
 
 // Estado inicial vacío — se llena al elegir dificultad
-let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal};
+let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0};
 loop();
 </script>
