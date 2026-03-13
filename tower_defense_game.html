@@ -7,34 +7,106 @@ body{font-family:var(--font-sans);display:flex;justify-content:center;min-height
 .screen{display:none;width:100%;max-width:580px;padding:1.5rem;}
 .screen.active{display:block;}
 
-/* ── MENU ── */
-#screen-menu{display:flex;flex-direction:column;min-height:100vh;padding:2rem 1.5rem;}
-#screen-menu .menu-top{display:flex;flex-direction:column;gap:12px;flex:1;}
-#screen-menu .menu-bottom{display:flex;justify-content:flex-end;}
-.menu-card{border:2px solid var(--color-border-secondary);border-radius:12px;padding:16px 22px;cursor:pointer;background:transparent;font-size:15px;font-weight:500;color:var(--color-text-primary);text-align:left;transition:background 0.15s;}
-.menu-card:hover{background:var(--color-background-secondary);}
-.menu-card.lg{font-size:20px;padding:20px 26px;}
-.td-badge{border:2px solid var(--color-border-secondary);border-radius:12px;padding:18px 28px;text-align:center;}
-.td-badge .td-title{font-size:22px;font-weight:700;color:var(--color-text-primary);letter-spacing:1px;}
-.td-badge .td-sub{font-size:12px;color:var(--color-text-secondary);margin-top:4px;}
+/* ── MENÚ PRINCIPAL ── */
+#screen-menu{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:2rem 1.5rem;gap:0;
+}
+.menu-hero{text-align:center;margin-bottom:2.5rem;}
+.menu-hero-icon{font-size:52px;line-height:1;margin-bottom:10px;}
+.menu-hero-title{
+  font-size:34px;font-weight:800;letter-spacing:2px;
+  background:linear-gradient(135deg,#E8A020,#D85A30);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.menu-hero-sub{font-size:13px;color:var(--color-text-secondary);margin-top:6px;letter-spacing:.5px;}
 
-/* ── DIFFICULTY / EXPLANATION ── */
-#screen-difficulty,#screen-explanation{min-height:100vh;padding:2.5rem 1.5rem;display:none;flex-direction:column;gap:16px;}
+/* Mini preview decorativa */
+.menu-preview{
+  display:grid;grid-template-columns:repeat(7,18px);grid-template-rows:repeat(4,18px);
+  gap:2px;margin:0 auto 2.5rem;opacity:.55;
+}
+.mp-path{background:#d4a96a;border-radius:3px;}
+.mp-grass{background:var(--color-background-secondary);border-radius:3px;}
+.mp-tower{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;}
+
+.menu-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:280px;}
+.btn-play{
+  padding:16px;font-size:17px;font-weight:700;border-radius:14px;
+  background:linear-gradient(135deg,#1a7a4a,#1e9458);
+  border:none;color:#fff;cursor:pointer;
+  box-shadow:0 4px 16px #1a7a4a44;
+  transition:transform .15s,box-shadow .15s;
+}
+.btn-play:hover{transform:translateY(-2px);box-shadow:0 6px 22px #1a7a4a66;}
+.btn-play:active{transform:scale(0.97);}
+.btn-secondary{
+  padding:12px;font-size:14px;font-weight:500;border-radius:12px;
+  background:transparent;border:1.5px solid var(--color-border-secondary);
+  color:var(--color-text-primary);cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.btn-secondary:hover{background:var(--color-background-secondary);border-color:var(--color-border-primary);}
+.menu-footer{margin-top:2.5rem;font-size:11px;color:var(--color-text-secondary);letter-spacing:.3px;}
+
+/* ── DIFFICULTY ── */
+#screen-difficulty,#screen-explanation{
+  min-height:100vh;padding:2rem 1.5rem;display:none;flex-direction:column;
+}
 #screen-difficulty.active,#screen-explanation.active{display:flex;}
-.screen-title{font-size:20px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px;}
-.diff-grid{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
-.diff-btn{border:2px solid var(--color-border-secondary);border-radius:12px;padding:18px 22px;cursor:pointer;background:transparent;text-align:left;transition:background 0.15s;}
-.diff-btn:hover{background:var(--color-background-secondary);}
-.diff-btn .d-name{font-size:16px;font-weight:600;color:var(--color-text-primary);}
-.diff-btn .d-desc{font-size:12px;color:var(--color-text-secondary);margin-top:3px;}
-.diff-btn.easy .d-name{color:#5DCAA5;}
+
+.screen-header{display:flex;align-items:center;gap:10px;margin-bottom:1.8rem;}
+.back-btn{
+  background:transparent;border:1px solid var(--color-border-secondary);
+  border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;
+  color:var(--color-text-secondary);transition:background .15s;
+}
+.back-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary);}
+.screen-title{font-size:22px;font-weight:700;color:var(--color-text-primary);}
+
+.diff-grid{display:flex;flex-direction:column;gap:12px;}
+.diff-btn{
+  border:2px solid var(--color-border-secondary);border-radius:14px;
+  padding:0;cursor:pointer;background:transparent;text-align:left;
+  transition:transform .15s,border-color .15s,box-shadow .15s;overflow:hidden;
+}
+.diff-btn:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.12);}
+.diff-inner{display:flex;align-items:stretch;}
+.diff-stripe{width:6px;flex-shrink:0;border-radius:0;}
+.diff-btn.easy  .diff-stripe{background:#5DCAA5;}
+.diff-btn.normal .diff-stripe{background:#E8A020;}
+.diff-btn.hard  .diff-stripe{background:#D85A30;}
+.diff-btn.easy:hover {border-color:#5DCAA5;}
+.diff-btn.normal:hover{border-color:#E8A020;}
+.diff-btn.hard:hover {border-color:#D85A30;}
+.diff-content{padding:16px 18px;flex:1;}
+.diff-top{display:flex;align-items:center;gap:10px;margin-bottom:5px;}
+.diff-icon{font-size:20px;}
+.d-name{font-size:16px;font-weight:700;}
+.diff-btn.easy  .d-name{color:#5DCAA5;}
 .diff-btn.normal .d-name{color:#E8A020;}
-.diff-btn.hard .d-name{color:#D85A30;}
-.back-btn{background:transparent;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);padding:7px 14px;font-size:13px;cursor:pointer;color:var(--color-text-secondary);width:fit-content;}
-.back-btn:hover{background:var(--color-background-secondary);}
-.expl-text{font-size:14px;color:var(--color-text-primary);line-height:1.7;background:var(--color-background-secondary);border-radius:10px;padding:18px;}
-.expl-section{margin-bottom:10px;}
-.expl-section b{color:var(--color-text-primary);}
+.diff-btn.hard  .d-name{color:#D85A30;}
+.d-desc{font-size:12px;color:var(--color-text-secondary);line-height:1.5;}
+.diff-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.diff-tag{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;}
+.diff-btn.easy  .diff-tag{background:#5DCAA522;color:#5DCAA5;}
+.diff-btn.normal .diff-tag{background:#E8A02022;color:#E8A020;}
+.diff-btn.hard  .diff-tag{background:#D85A3022;color:#D85A30;}
+
+/* ── EXPLICACIÓN ── */
+.expl-card{
+  background:var(--color-background-secondary);border-radius:12px;
+  padding:16px 18px;margin-bottom:10px;
+}
+.expl-card-title{font-size:13px;font-weight:700;color:var(--color-text-primary);
+  margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.expl-row{display:flex;align-items:center;gap:10px;padding:5px 0;
+  border-bottom:1px solid var(--color-border-tertiary);font-size:13px;}
+.expl-row:last-child{border-bottom:none;}
+.expl-dot{width:22px;height:22px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;}
+.expl-intro{font-size:14px;color:var(--color-text-primary);line-height:1.7;margin-bottom:14px;}
 
 /* ── GAME ── */
 #screen-game{padding:1rem;max-width:580px;width:100%;}
@@ -98,54 +170,123 @@ button:disabled{opacity:0.35;cursor:default;}
 
 <!-- MENÚ PRINCIPAL -->
 <div id="screen-menu" class="active">
-  <div class="menu-top">
-    <button class="menu-card lg" id="btnJugar">Jugar</button>
-    <button class="menu-card" id="btnExplicacion">Explicación</button>
+  <div class="menu-hero">
+    <div class="menu-hero-icon">🗼</div>
+    <div class="menu-hero-title">TOWER DEFENSE</div>
+    <div class="menu-hero-sub">100 oleadas · 4 tipos de enemigos · 3 dificultades</div>
   </div>
-  <div class="menu-bottom">
-    <div class="td-badge">
-      <div class="td-title">Tower Defense</div>
-      <div class="td-sub">100 oleadas · 4 tipos de enemigos</div>
-    </div>
+
+  <!-- Mini preview decorativa del mapa -->
+  <div class="menu-preview" id="menuPreview"></div>
+
+  <div class="menu-btns">
+    <button class="btn-play" id="btnJugar">▶ &nbsp;Jugar</button>
+    <button class="btn-secondary" id="btnExplicacion">📖 &nbsp;¿Cómo jugar?</button>
   </div>
+  <div class="menu-footer">v1.0 · Hecho con ❤️</div>
 </div>
 
 <!-- SELECCIÓN DE DIFICULTAD -->
 <div id="screen-difficulty">
-  <button class="back-btn" id="btnBackDiff">← Volver</button>
-  <div class="screen-title">Selecciona dificultad</div>
+  <div class="screen-header">
+    <button class="back-btn" id="btnBackDiff">← Volver</button>
+    <div class="screen-title">Selecciona dificultad</div>
+  </div>
   <div class="diff-grid">
     <button class="diff-btn easy" data-diff="easy">
-      <div class="d-name">Fácil</div>
-      <div class="d-desc">500 monedas iniciales · enemigos con menos vida · más bonus por oleada</div>
+      <div class="diff-inner">
+        <div class="diff-stripe"></div>
+        <div class="diff-content">
+          <div class="diff-top"><span class="diff-icon">🌿</span><span class="d-name">Fácil</span></div>
+          <div class="d-desc">Ideal para aprender a jugar. Más monedas y enemigos más débiles.</div>
+          <div class="diff-tags">
+            <span class="diff-tag">💰 500 monedas</span>
+            <span class="diff-tag">❤️ Enemigos −30% vida</span>
+            <span class="diff-tag">✨ Bonus ×1.5</span>
+          </div>
+        </div>
+      </div>
     </button>
     <button class="diff-btn normal" data-diff="normal">
-      <div class="d-name">Normal</div>
-      <div class="d-desc">300 monedas iniciales · dificultad estándar</div>
+      <div class="diff-inner">
+        <div class="diff-stripe"></div>
+        <div class="diff-content">
+          <div class="diff-top"><span class="diff-icon">⚔️</span><span class="d-name">Normal</span></div>
+          <div class="d-desc">La experiencia equilibrada. Tal como fue diseñado.</div>
+          <div class="diff-tags">
+            <span class="diff-tag">💰 300 monedas</span>
+            <span class="diff-tag">❤️ Vida estándar</span>
+            <span class="diff-tag">✨ Bonus ×1.0</span>
+          </div>
+        </div>
+      </div>
     </button>
     <button class="diff-btn hard" data-diff="hard">
-      <div class="d-name">Difícil</div>
-      <div class="d-desc">150 monedas iniciales · enemigos con más vida · menos bonus por oleada</div>
+      <div class="diff-inner">
+        <div class="diff-stripe"></div>
+        <div class="diff-content">
+          <div class="diff-top"><span class="diff-icon">💀</span><span class="d-name">Difícil</span></div>
+          <div class="d-desc">Para los que buscan un reto real. Pocos recursos, muchos enemigos.</div>
+          <div class="diff-tags">
+            <span class="diff-tag">💰 150 monedas</span>
+            <span class="diff-tag">❤️ Enemigos +35% vida</span>
+            <span class="diff-tag">✨ Bonus ×0.6</span>
+          </div>
+        </div>
+      </div>
     </button>
   </div>
 </div>
 
 <!-- EXPLICACIÓN -->
 <div id="screen-explanation">
-  <button class="back-btn" id="btnBackExpl">← Volver</button>
-  <div class="screen-title">¿Cómo jugar?</div>
-  <div class="expl-text">
-    <div class="expl-section">Dale clic a las torres del menú inferior y colócalas en las <b>celdas verdes</b> del mapa para ir derrotando enemigos y generar más dinero para combatir contra los jefes.</div>
-    <div class="expl-section"><b>Torres:</b><br>
-      🔵 <b>Básica (B)</b> — equilibrada, 1 dmg, coste 50<br>
-      🟢 <b>Rápida (R)</b> — ataca muy rápido, 0.7 dmg, coste 80<br>
-      🔴 <b>Pesada (P)</b> — lenta pero potente, 3 dmg, coste 120
+  <div class="screen-header">
+    <button class="back-btn" id="btnBackExpl">← Volver</button>
+    <div class="screen-title">¿Cómo jugar?</div>
+  </div>
+  <p class="expl-intro">Coloca torres en las <b>celdas verdes</b> del mapa. Los enemigos avanzan por el camino — dispárales antes de que lleguen al final.</p>
+
+  <div class="expl-card">
+    <div class="expl-card-title">🏰 Torres aliadas</div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#185FA5">B</div>
+      <div><b>Básica</b> — 50💰 · 1 dmg · velocidad normal</div>
     </div>
-    <div class="expl-section"><b>Enemigos (todos rojos):</b><br>
-      <b>N</b> Normal · <b>R</b> Rápido · <b>P</b> Pesado · <b>J</b> Jefe (cada 10 oleadas)
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#3B6D11">R</div>
+      <div><b>Rápida</b> — 80💰 · 0.7 dmg · ataca muy rápido</div>
     </div>
-    <div class="expl-section"><b>Monedas:</b> matar enemigos da monedas. Al acabar cada oleada recibes un bonus.</div>
-    <div class="expl-section"><b>Vidas:</b> si un enemigo llega al final pierdes 1 vida. Si llegas a 0, es Game Over.</div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#712B13">P</div>
+      <div><b>Pesada</b> — 120💰 · 3 dmg · disparo lento y potente</div>
+    </div>
+  </div>
+
+  <div class="expl-card">
+    <div class="expl-card-title">👹 Enemigos</div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#C0392B">N</div>
+      <div><b>Normal</b> — velocidad y vida estándar</div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#E74C3C">R</div>
+      <div><b>Rápido</b> — muy veloz pero poca vida</div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#7B1A1A">P</div>
+      <div><b>Pesado</b> — lento pero con mucha vida</div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#A00000">J</div>
+      <div><b>Jefe</b> — aparece cada 10 oleadas, muy resistente</div>
+    </div>
+  </div>
+
+  <div class="expl-card">
+    <div class="expl-card-title">💡 Consejos</div>
+    <div class="expl-row">💰<div>Matar enemigos da monedas. Cada oleada completada da bonus extra.</div></div>
+    <div class="expl-row">❤️<div>Si un enemigo llega al final pierdes 1 vida. A 0 vidas, Game Over.</div></div>
+    <div class="expl-row">🔄<div>Puedes vender torres al 50% de su coste para recolocarlas.</div></div>
   </div>
 </div>
 
@@ -207,6 +348,28 @@ button:disabled{opacity:0.35;cursor:default;}
   <button id="menuBtn">← Regresar al menú principal</button>
 </div>
 <script>
+// ── MINI PREVIEW DECORATIVA ──
+(function(){
+  const grid = document.getElementById('menuPreview');
+  // 7 columnas x 4 filas — representa el camino de forma simplificada
+  const layout = [
+    ['g','p','g','g','g','g','g'],
+    ['g','p','p','p','T','g','g'],
+    ['g','g','g','p','g','g','g'],
+    ['g','g','g','p','p','p','E'],
+  ];
+  layout.forEach(row=>{
+    row.forEach(cell=>{
+      const d = document.createElement('div');
+      if(cell==='p'){ d.className='mp-path'; }
+      else if(cell==='T'){ d.className='mp-tower'; d.style.background='#185FA5'; d.textContent='B'; }
+      else if(cell==='E'){ d.className='mp-path'; d.style.background='#D85A30'; d.style.borderRadius='50%'; }
+      else { d.className='mp-grass'; }
+      grid.appendChild(d);
+    });
+  });
+})();
+
 // ── SCREEN NAVIGATION ──
 const DIFF_CONFIG = {
   easy:   {coins:500, hpMult:0.7,  bonusMult:1.5},
