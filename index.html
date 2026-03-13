@@ -542,10 +542,10 @@ const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
-  basic:  {color:'#185FA5', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B'},
-  fast:   {color:'#1a5fa0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R'},
-  heavy:  {color:'#712B13', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P'},
-  elite:  {color:'#e8e8e8', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E'},
+  basic:  {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B'},
+  fast:   {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R'},
+  heavy:  {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P'},
+  elite:  {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E'},
 };
 
 
@@ -1007,8 +1007,8 @@ function draw(){
     const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
     const r = CW*0.38;
     if(t.showRange){
-      ctx.strokeStyle = tp.color+'55';
-      ctx.lineWidth=1;
+      ctx.strokeStyle = (tp.rangeColor || tp.color)+'88';
+      ctx.lineWidth=1.5;
       ctx.setLineDash([4,3]);
       ctx.beginPath(); ctx.arc(tx,ty,tp.range*CW,0,Math.PI*2); ctx.stroke();
       ctx.setLineDash([]);
