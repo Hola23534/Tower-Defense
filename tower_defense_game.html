@@ -162,6 +162,8 @@ body::after{
 
 /* Explanation */
 .expl-intro{font-size:14px;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:14px;}
+.tag-ground{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(93,202,165,0.15);color:#5DCAA5;border:1px solid rgba(93,202,165,0.3);margin-left:6px;vertical-align:middle;font-weight:500;}
+.tag-air{display:inline-block;font-size:10px;padding:1px 6px;border-radius:10px;background:rgba(100,160,255,0.15);color:#88bbff;border:1px solid rgba(100,160,255,0.3);margin-left:6px;vertical-align:middle;font-weight:500;}
 .expl-card{
   background:rgba(255,255,255,.07);
   backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
@@ -359,19 +361,23 @@ button:disabled{opacity:0.3;cursor:default;}
     <div class="expl-card-title">🏰 Torres aliadas</div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#185FA5">B</div>
-      <div><b>Básica</b> — 50💰 · 1 dmg · velocidad normal</div>
+      <div><b>Básica</b> — 50💰 · 1 dmg · velocidad normal <span class="tag-ground">🏔️ Terrestre</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#1a5fa0">R</div>
-      <div><b>Rápida</b> — 80💰 · 0.7 dmg · ataca muy rápido</div>
+      <div><b>Rápida</b> — 80💰 · 0.7 dmg · ataca muy rápido <span class="tag-ground">🏔️ Terrestre</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#712B13">P</div>
-      <div><b>Pesada</b> — 120💰 · 3 dmg · disparo lento y potente</div>
+      <div><b>Pesada</b> — 120💰 · 3 dmg · disparo lento y potente <span class="tag-ground">🏔️ Terrestre</span></div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#c8a000">V</div>
+      <div><b>Jetpack</b> — 200💰 · 1.8 dmg · soldado con jetpack amarillo <span class="tag-air">✈️ Aéreo</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
-      <div><b>Élite</b> — 1000💰 · 4 dmg · uniforme blanco, velocidad normal</div>
+      <div><b>Élite</b> — 1000💰 · 4 dmg · uniforme blanco, rifle dorado <span class="tag-air">✈️ Aéreo</span></div>
     </div>
   </div>
 
@@ -379,19 +385,23 @@ button:disabled{opacity:0.3;cursor:default;}
     <div class="expl-card-title">👹 Enemigos</div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#C0392B">N</div>
-      <div><b>Normal</b> — velocidad y vida estándar</div>
+      <div><b>Normal</b> — velocidad y vida estándar <span class="tag-ground">🏔️ Terrestre</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#E74C3C">R</div>
-      <div><b>Rápido</b> — muy veloz pero poca vida</div>
+      <div><b>Rápido</b> — muy veloz pero poca vida <span class="tag-ground">🏔️ Terrestre</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#7B1A1A">P</div>
-      <div><b>Pesado</b> — lento pero con mucha vida</div>
+      <div><b>Pesado</b> — lento pero con mucha vida <span class="tag-ground">🏔️ Terrestre</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#A00000">J</div>
-      <div><b>Jefe</b> — aparece cada 10 oleadas, muy resistente</div>
+      <div><b>Jefe</b> — aparece cada 10 oleadas, muy resistente <span class="tag-ground">🏔️ Terrestre</span></div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#5a8a20;border:2px solid #88ccff">G</div>
+      <div><b>Globo</b> — zombie con globos, vuela, menos vida, recompensa doble <span class="tag-air">✈️ Aéreo</span></div>
     </div>
   </div>
 
