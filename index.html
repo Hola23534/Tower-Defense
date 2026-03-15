@@ -1,4 +1,4 @@
-
+﻿
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 
@@ -449,6 +449,13 @@ button:disabled{opacity:0.3;cursor:default;}
         <span class="tbtn-stats">120💰 · 3 dmg</span>
       </div>
     </button>
+    <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
+      <div class="tower-icon" style="background:#c8a000">V</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Jetpack</span>
+        <span class="tbtn-stats">200 coins - 1.8 dmg - Aereo</span>
+      </div>
+    </button>
     <button class="tbtn" data-type="elite" title="Élite: 4 dmg, velocidad normal, coste alto">
       <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
       <div class="tbtn-info">
@@ -467,6 +474,17 @@ button:disabled{opacity:0.3;cursor:default;}
   </div>
   <button id="menuBtn">← Regresar al menú principal</button>
 </div>
+
+<div id="tower-menu" style="display:none;position:fixed;background:rgba(10,18,40,0.97);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:16px 18px;min-width:190px;z-index:999;box-shadow:0 8px 28px rgba(0,0,0,0.6);color:#fff;font-family:inherit;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span id="tmenu-name" style="font-weight:700;font-size:15px;"></span>
+    <button id="tmenu-close" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:18px;line-height:1;padding:0 2px;">&times;</button>
+  </div>
+  <div id="tmenu-target" style="font-size:13px;margin-bottom:5px;color:#aaddff;"></div>
+  <div id="tmenu-stats" style="font-size:12px;color:#ccc;margin-bottom:14px;line-height:1.7;white-space:pre-line;"></div>
+  <button id="tmenu-sell" style="width:100%;padding:9px;background:rgba(139,32,0,0.7);border:1px solid #D85A30;border-radius:9px;color:#fff;cursor:pointer;font-size:13px;font-weight:600;"></button>
+</div>
+
 <script>
 // ── MINI PREVIEW DECORATIVA ──
 (function(){
@@ -542,10 +560,11 @@ const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
-  basic:  {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B'},
-  fast:   {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R'},
-  heavy:  {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P'},
-  elite:  {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E'},
+  basic:   {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B', targeting:'ground'},
+  fast:    {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R', targeting:'ground'},
+  heavy:   {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P', targeting:'ground'},
+  elite:   {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E', targeting:'air'},
+  jetpack: {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air'},
 };
 
 
@@ -585,10 +604,11 @@ function spawnEnemy(hp, speed, reward, kind){
 
 // Definición visual de cada tipo de enemigo
 const ENEMY_KINDS = {
-  normal: {color:'#C0392B', border:null,       radius:0.27, label:'N'},
-  fast:   {color:'#E74C3C', border:null,       radius:0.21, label:'R'},
-  heavy:  {color:'#7B1A1A', border:null,       radius:0.34, label:'P'},
-  boss:   {color:'#A00000', border:'#FF4444',  radius:0.48, label:'J'},
+  normal:  {color:'#C0392B', border:null,       radius:0.27, label:'N', flying:false},
+  fast:    {color:'#E74C3C', border:null,       radius:0.21, label:'R', flying:false},
+  heavy:   {color:'#7B1A1A', border:null,       radius:0.34, label:'P', flying:false},
+  boss:    {color:'#A00000', border:'#FF4444',  radius:0.48, label:'J', flying:false},
+  balloon: {color:'#5a8a20', border:'#88ccff',  radius:0.25, label:'G', flying:true},
 };
 
 // Escala de oleadas suave hasta 100, jefe cada 10 oleadas
@@ -608,6 +628,9 @@ function buildWaveQueue(w){
     } else if(w >= 5 && i % 3 === 0){
       // Rápido: menos vida, más veloz
       q.push({hp: Math.round(baseHp*0.45), speed: baseSpeed*1.9, reward: Math.max(1,Math.floor(baseReward*0.7)), kind:'fast'});
+    } else if(w >= 8 && i % 6 === 4){
+      // Zombie globo (aereo)
+      q.push({hp: Math.round(baseHp*0.7), speed: baseSpeed*1.1, reward: baseReward*2, kind:'balloon'});
     } else {
       // Normal
       q.push({hp: baseHp, speed: baseSpeed, reward: baseReward, kind:'normal'});
@@ -657,8 +680,8 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.translate(tx, ty);
   ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
 
-  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : '#5a4018';
-  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : '#6b5020';
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : type==='jetpack' ? '#a07800' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : type==='jetpack' ? '#e8c000' : '#6b5020';
 
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -752,6 +775,38 @@ function drawZombie(ctx, px, py, e, r){
   ctx.save();
   ctx.translate(px, py);
   ctx.rotate(ma + Math.PI/2); // zombie mira hacia donde se mueve
+
+  // Balloon zombie especial
+  if(e.kind === 'balloon'){
+    ctx.fillStyle='rgba(0,0,0,0.15)';
+    ctx.beginPath(); ctx.ellipse(r*0.1,r*0.6,r*0.46,r*0.16,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#5a7a28';
+    ctx.beginPath(); ctx.arc(0,r*0.1,r*0.52,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#7a9a38';
+    ctx.beginPath(); ctx.arc(0,-r*0.26,r*0.38,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#ddd';
+    ctx.beginPath(); ctx.arc(-r*0.13,-r*0.28,r*0.1,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( r*0.13,-r*0.28,r*0.1,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#111';
+    ctx.beginPath(); ctx.arc(-r*0.11,-r*0.27,r*0.055,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc( r*0.15,-r*0.27,r*0.055,0,Math.PI*2); ctx.fill();
+    var bColors=['#ff4466','#4488ff','#ffcc00'];
+    var bOff=[[-r*0.26,-r*0.9],[0,-r*1.04],[r*0.26,-r*0.88]];
+    bOff.forEach(function(bp,i){
+      ctx.strokeStyle='rgba(200,200,200,0.6)'; ctx.lineWidth=0.8;
+      ctx.beginPath(); ctx.moveTo(0,-r*0.08); ctx.lineTo(bp[0],bp[1]+r*0.18); ctx.stroke();
+      ctx.fillStyle=bColors[i];
+      ctx.beginPath(); ctx.arc(bp[0],bp[1],r*0.21,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.3)';
+      ctx.beginPath(); ctx.arc(bp[0]-r*0.05,bp[1]-r*0.06,r*0.07,0,Math.PI*2); ctx.fill();
+    });
+    ctx.fillStyle='#fff';
+    ctx.font='bold '+Math.round(r*0.36)+'px sans-serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('G', 0, r*0.08);
+    ctx.lineWidth=1; ctx.restore();
+    return;
+  }
 
   const zc = {
     normal:{body:'#5a7030',flesh:'#7a9a40',rot:'#3a5018',cloth:'#6a5838'},
@@ -882,6 +937,9 @@ function update(){
     let target=null, bestT=-Infinity;
     state.enemies.forEach(e=>{
       if(e.dead) return;
+      const ek = ENEMY_KINDS[e.kind] || ENEMY_KINDS.normal;
+      if(tp.targeting === 'air' && !ek.flying) return;
+      if(tp.targeting === 'ground' && ek.flying) return;
       const pos = pathPos(e.t);
       if(!pos) return;
       if(dist(tx,ty,pos.x,pos.y)<rangePx && e.t>bestT){ bestT=e.t; target=e; }
@@ -1116,6 +1174,42 @@ function draw(){
 let animId;
 function loop(){ update(); draw(); animId=requestAnimationFrame(loop); }
 
+let _tmIdx = -1;
+function showTowerMenu(idx, cx, cy){
+  _tmIdx = idx;
+  const t = state.towers[idx];
+  const tp = TOWER_TYPES[t.type];
+  const names = {basic:'Basica',fast:'Rapida',heavy:'Pesada',elite:'Elite',jetpack:'Jetpack'};
+  const menu = document.getElementById('tower-menu');
+  document.getElementById('tmenu-name').textContent = names[t.type]||t.type;
+  document.getElementById('tmenu-target').textContent =
+    tp.targeting==='air' ? 'Ataca unidades AEREAS' : 'Ataca unidades TERRESTRES';
+  document.getElementById('tmenu-stats').textContent =
+    'Dano: '+tp.dmg+'\nRango: '+tp.range+'\nCoste: '+tp.cost;
+  document.getElementById('tmenu-sell').textContent =
+    'Vender (+'+(Math.floor(tp.cost*0.5))+' monedas)';
+  menu.style.display = 'block';
+  const mw=200, mh=170;
+  let x=cx+12, y=cy-20;
+  if(x+mw>window.innerWidth) x=cx-mw-12;
+  if(y+mh>window.innerHeight) y=window.innerHeight-mh-10;
+  menu.style.left=x+'px'; menu.style.top=y+'px';
+}
+document.getElementById('tmenu-close').addEventListener('click',function(){
+  document.getElementById('tower-menu').style.display='none';
+});
+document.getElementById('tmenu-sell').addEventListener('click',function(){
+  if(_tmIdx<0||_tmIdx>=state.towers.length) return;
+  var t=state.towers[_tmIdx];
+  var refund=Math.floor(TOWER_TYPES[t.type].cost*0.5);
+  state.coins+=refund;
+  state.towers.splice(_tmIdx,1);
+  document.getElementById('tower-menu').style.display='none';
+  _tmIdx=-1;
+  setMsg('Torre vendida (+'+refund+' monedas)');
+  updateHUD();
+});
+
 canvas.addEventListener('click', e=>{
   if(state.gameOver||state.victory) return;
   const rect=canvas.getBoundingClientRect();
@@ -1123,6 +1217,11 @@ canvas.addEventListener('click', e=>{
   const my=(e.clientY-rect.top)*(canvas.height/rect.height);
   const col=Math.floor(mx/CW), row=Math.floor(my/CH);
   const key=col+','+row;
+
+  if(!state.sellMode){
+    const ti=state.towers.findIndex(t=>t.col===col&&t.row===row);
+    if(ti>=0){ showTowerMenu(ti,e.clientX,e.clientY); return; }
+  }
 
   if(state.sellMode){
     const idx=state.towers.findIndex(t=>t.col===col&&t.row===row);
