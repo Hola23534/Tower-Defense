@@ -159,6 +159,12 @@ body::after{
 .diff-btn.easy   .diff-tag{background:rgba(93,202,165,.18);color:#7de0bc;border:1px solid rgba(93,202,165,.3);}
 .diff-btn.normal .diff-tag{background:rgba(232,160,32,.18);color:#f0c050;border:1px solid rgba(232,160,32,.3);}
 .diff-btn.hard   .diff-tag{background:rgba(224,80,48,.18); color:#f09080;border:1px solid rgba(224,80,48,.3);}
+.diff-btn.infinite .diff-stripe{background:linear-gradient(180deg,#9b59b6,#6c3483);}
+.diff-btn.infinite:hover{border-color:#9b59b6;box-shadow:0 8px 24px rgba(155,89,182,.25);}
+.diff-btn.infinite .d-name{color:#c39bd3;}
+.diff-btn.infinite .diff-tag{background:rgba(155,89,182,.18);color:#d2b4de;border:1px solid rgba(155,89,182,.3);}
+.tbtn.can-afford{border-color:rgba(93,202,165,0.7);box-shadow:0 0 14px rgba(93,202,165,0.35),inset 0 0 8px rgba(93,202,165,0.08);background:rgba(93,202,165,0.09);}
+.tbtn.can-afford .tbtn-name{color:#7de0bc;}
 
 /* Explanation */
 .expl-intro{font-size:14px;color:rgba(255,255,255,.75);line-height:1.7;margin-bottom:14px;}
@@ -346,6 +352,20 @@ button:disabled{opacity:0.3;cursor:default;}
         </div>
       </div>
     </button>
+    <button class="diff-btn infinite" data-diff="infinite">
+      <div class="diff-inner">
+        <div class="diff-stripe"></div>
+        <div class="diff-content">
+          <div class="diff-top"><span class="diff-icon">&#8734;</span><span class="d-name">Infinito</span></div>
+          <div class="d-desc">Sin final. Los enemigos escalan para siempre. ¿Hasta dónde llegas?</div>
+          <div class="diff-tags">
+            <span class="diff-tag">&#128176; 250 monedas</span>
+            <span class="diff-tag">&#128147; Enemigos escalando</span>
+            <span class="diff-tag">&#8734; Sin victoria</span>
+          </div>
+        </div>
+      </div>
+    </button>
   </div>
 </div>
 
@@ -522,7 +542,8 @@ button:disabled{opacity:0.3;cursor:default;}
 const DIFF_CONFIG = {
   easy:   {coins:500, hpMult:0.7,  bonusMult:1.5},
   normal: {coins:300, hpMult:1.0,  bonusMult:1.0},
-  hard:   {coins:150, hpMult:1.35, bonusMult:0.6},
+  hard:     {coins:150, hpMult:1.35, bonusMult:0.6},
+  infinite: {coins:250, hpMult:1.0,  bonusMult:0.9, infiniteMode:true},
 };
 let currentDiff = 'normal';
 
@@ -559,14 +580,45 @@ const CW = canvas.width / COLS, CH = canvas.height / ROWS;
 const MAX_LIVES = 20;
 const TOTAL_WAVES = 100;
 
-const PATH = [
-  [0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[3,5],
-  [4,5],[5,5],[6,5],[6,4],[6,3],[6,2],[7,2],
-  [8,2],[8,3],[8,4],[8,5],[8,6],[8,7],
-  [9,7],[10,7],[11,7],[11,6],[11,5],[11,4],
-  [12,4],[13,4]
-];
-const PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
+function generatePath(){
+  // Zigzag: alternates between upper rows (1-3) and lower rows (6-8)
+  let inTop = Math.random() < 0.5;
+  let row = inTop ? (1+Math.floor(Math.random()*3)) : (6+Math.floor(Math.random()*3));
+  const numTurns = 2 + Math.floor(Math.random()*3); // 2-4 turns
+  // Spread turn columns evenly with slight randomness
+  const turnCols = [];
+  for(let i=1; i<=numTurns; i++){
+    let tc = Math.floor(13*i/(numTurns+1)) + Math.floor(Math.random()*3)-1;
+    tc = Math.max(2, Math.min(11, tc));
+    if(turnCols.length===0 || tc > turnCols[turnCols.length-1]+1) turnCols.push(tc);
+  }
+  // Waypoints: [col, row] at each corner
+  const wps = [[0, row]];
+  for(const tc of turnCols){
+    wps.push([tc, row]);
+    inTop = !inTop;
+    const newRow = inTop ? (1+Math.floor(Math.random()*3)) : (6+Math.floor(Math.random()*3));
+    wps.push([tc, newRow]);
+    row = newRow;
+  }
+  wps.push([13, row]);
+  // Expand waypoints to cells
+  const path = [];
+  for(let i=0; i<wps.length-1; i++){
+    const [c1,r1]=wps[i], [c2,r2]=wps[i+1];
+    if(c1===c2){
+      const step=r2>r1?1:-1;
+      for(let r=r1+step; step>0?r<=r2:r>=r2; r+=step) path.push([c1,r]);
+    } else {
+      const startC = i===0 ? c1 : c1+1;
+      for(let c=startC; c<=c2; c++) path.push([c,r1]);
+    }
+  }
+  return path;
+}
+
+let PATH = generatePath();
+let PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
@@ -581,6 +633,8 @@ const TOWER_TYPES = {
 function resetGame(){
   const auto = state ? state.autoWave : false;
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
+  PATH = generatePath();
+  PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
   state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182};
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
@@ -591,12 +645,18 @@ function resetGame(){
 function updateHUD(){
   document.getElementById('lives').textContent = state.lives;
   document.getElementById('coins').textContent = state.coins;
-  document.getElementById('wave').textContent = state.wave + ' / ' + TOTAL_WAVES;
+  const isInf = state.diff && state.diff.infiniteMode;
+  document.getElementById('wave').textContent = state.wave + ' / ' + (isInf ? 'âˆž' : TOTAL_WAVES);
   document.getElementById('ecount').textContent = state.enemies.length + state.spawnQueue.length;
   document.getElementById('startBtn').disabled = state.waveRunning || state.gameOver || state.victory;
   document.getElementById('bar-lives').style.width = Math.max(0, state.lives / MAX_LIVES * 100) + '%';
   document.getElementById('bar-coins').style.width = Math.min(100, state.coins / 1000 * 100) + '%';
-  document.getElementById('bar-wave').style.width = (state.wave / TOTAL_WAVES * 100) + '%';
+  document.getElementById('bar-wave').style.width = (isInf ? Math.min(100,state.wave) : state.wave / TOTAL_WAVES * 100) + '%';
+  // Highlight affordable towers
+  document.querySelectorAll('.tbtn').forEach(function(btn){
+    const tp = TOWER_TYPES[btn.dataset.type];
+    if(tp) btn.classList.toggle('can-afford', state.coins >= tp.cost);
+  });
 }
 
 function pathPos(t){
@@ -991,7 +1051,7 @@ function update(){
   // Fin de oleada
   if(state.waveRunning && !state.spawning && state.enemies.length===0 && state.spawnQueue.length===0){
     state.waveRunning = false;
-    if(state.wave >= TOTAL_WAVES){
+    if(state.wave >= TOTAL_WAVES && !(state.diff && state.diff.infiniteMode)){
       state.victory = true;
       setMsg('¡Victoria! Completaste las 100 oleadas!');
     } else {
