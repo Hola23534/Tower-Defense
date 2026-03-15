@@ -581,40 +581,57 @@ const MAX_LIVES = 20;
 const TOTAL_WAVES = 100;
 
 function generatePath(){
-  // Zigzag: alternates between upper rows (1-3) and lower rows (6-8)
-  let inTop = Math.random() < 0.5;
-  let row = inTop ? (1+Math.floor(Math.random()*3)) : (6+Math.floor(Math.random()*3));
-  const numTurns = 2 + Math.floor(Math.random()*3); // 2-4 turns
-  // Spread turn columns evenly with slight randomness
-  const turnCols = [];
-  for(let i=1; i<=numTurns; i++){
-    let tc = Math.floor(13*i/(numTurns+1)) + Math.floor(Math.random()*3)-1;
-    tc = Math.max(2, Math.min(11, tc));
-    if(turnCols.length===0 || tc > turnCols[turnCols.length-1]+1) turnCols.push(tc);
-  }
-  // Waypoints: [col, row] at each corner
-  const wps = [[0, row]];
-  for(const tc of turnCols){
-    wps.push([tc, row]);
-    inTop = !inTop;
-    const newRow = inTop ? (1+Math.floor(Math.random()*3)) : (6+Math.floor(Math.random()*3));
-    wps.push([tc, newRow]);
-    row = newRow;
-  }
-  wps.push([13, row]);
-  // Expand waypoints to cells
-  const path = [];
-  for(let i=0; i<wps.length-1; i++){
-    const [c1,r1]=wps[i], [c2,r2]=wps[i+1];
-    if(c1===c2){
-      const step=r2>r1?1:-1;
-      for(let r=r1+step; step>0?r<=r2:r>=r2; r+=step) path.push([c1,r]);
-    } else {
-      const startC = i===0 ? c1 : c1+1;
-      for(let c=startC; c<=c2; c++) path.push([c,r1]);
+  // Up to 30 attempts to get a valid, varied path
+  for(let attempt=0; attempt<30; attempt++){
+    const numTurns = 2 + Math.floor(Math.random()*6); // 2-7 turns
+
+    // Spread turn columns with randomness, at least 2 apart
+    const turnCols = [];
+    for(let i=1; i<=numTurns; i++){
+      let tc = Math.floor(13*i/(numTurns+1)) + Math.floor(Math.random()*3)-1;
+      tc = Math.max(2, Math.min(11, tc));
+      if(turnCols.length===0 || tc > turnCols[turnCols.length-1]+1) turnCols.push(tc);
     }
+    if(turnCols.length < 2) continue;
+
+    // Fully random start row (rows 1-8, leaving border for towers)
+    let row = 1 + Math.floor(Math.random()*8);
+    const wps = [[0, row]];
+
+    let ok = true;
+    for(const tc of turnCols){
+      wps.push([tc, row]);
+      // New row must differ by at least 2 from current
+      let newRow, tries=0;
+      do { newRow = 1 + Math.floor(Math.random()*8); tries++; }
+      while(tries < 30 && Math.abs(newRow - row) < 2);
+      if(Math.abs(newRow - row) < 2){ ok=false; break; }
+      wps.push([tc, newRow]);
+      row = newRow;
+    }
+    if(!ok) continue;
+    wps.push([13, row]);
+
+    // Expand waypoints to path cells (no duplicates by construction)
+    const path = [];
+    for(let i=0; i<wps.length-1; i++){
+      const [c1,r1]=wps[i], [c2,r2]=wps[i+1];
+      if(c1===c2){
+        const step=r2>r1?1:-1;
+        for(let r=r1+step; step>0?r<=r2:r>=r2; r+=step) path.push([c1,r]);
+      } else {
+        const startC = i===0 ? c1 : c1+1;
+        for(let c=startC; c<=c2; c++) path.push([c,r1]);
+      }
+    }
+    if(path.length >= 18) return path;
   }
-  return path;
+  // Fallback: classic zigzag
+  return [[0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[3,5],
+    [4,5],[5,5],[6,5],[6,4],[6,3],[6,2],[7,2],
+    [8,2],[8,3],[8,4],[8,5],[8,6],[8,7],
+    [9,7],[10,7],[11,7],[11,6],[11,5],[11,4],
+    [12,4],[13,4]];
 }
 
 let PATH = generatePath();
