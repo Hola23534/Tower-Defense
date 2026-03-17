@@ -544,6 +544,13 @@ button:disabled{opacity:0.3;cursor:default;}
               <span class="tbtn-stats">40💰 · 10 dmg · 3s</span>
             </div>
           </button>
+          <button class="tbtn" data-type="spikes" title="Pinchos: coloca en el camino, 1 dmg al pisarlos">
+            <div class="tower-icon" style="background:#666;font-size:16px">▲</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Pinchos</span>
+              <span class="tbtn-stats">25💰 · 1 dmg · camino</span>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -703,6 +710,7 @@ const TOWER_TYPES = {
   jetpack: {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air'},
   ice:     {color:'#2a6fa8', rangeColor:'#88ccff', range:2.2, fireRate:9999, dmg:0,   cost:90,   bullet:'#88ccff', label:'H', targeting:'ground', slowTower:true},
   bomb:    {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10,  cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
+  spikes:  {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,   cost:25,   bullet:'#aaa',    label:'▲', targeting:'ground'},
 };
 
 
@@ -711,7 +719,7 @@ function resetGame(){
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
   PATH = generatePath();
   PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
-  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
@@ -1242,6 +1250,24 @@ function update(){
     }
   }
 
+  // Pinchos - daño al pisar
+  if(!state.spikes)state.spikes=[];
+  state.spikes.forEach(function(s){
+    if(!s.cd)s.cd={};
+    var sx=(s.col+0.5)*CW, sy=(s.row+0.5)*CH;
+    Object.keys(s.cd).forEach(function(id){if(s.cd[id]>0)s.cd[id]--;});
+    state.enemies.forEach(function(e){
+      var p=pathPos(e.t);if(!p)return;
+      if(dist(sx,sy,p.x,p.y)<CW*0.65){
+        var id=String(e.id);
+        if(!s.cd[id]){
+          e.hp-=1;s.cd[id]=90;
+          if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');}
+        }
+      }
+    });
+  });
+
   // Partículas
   // Bombas
   if(!state.bombs)state.bombs=[];
@@ -1314,12 +1340,42 @@ function draw(){
     ctx.lineWidth=1;
   });
 
+  // Pinchos en camino
+  if(state.spikes)state.spikes.forEach(function(s){
+    var sx=(s.col+0.5)*CW, sy=(s.row+0.5)*CH;
+    ctx.save();
+    ctx.fillStyle='rgba(70,70,70,0.55)';
+    ctx.fillRect(s.col*CW+2,s.row*CH+CW*0.38,CW-4,CH*0.22);
+    ctx.fillStyle='#999';ctx.strokeStyle='#555';ctx.lineWidth=0.6;
+    var ns=5, sw2=(CW-4)/ns;
+    for(var i=0;i<ns;i++){
+      var px=s.col*CW+2+sw2*i+sw2/2;
+      ctx.beginPath();ctx.moveTo(px,s.row*CH+CH*0.15);
+      ctx.lineTo(px-sw2*0.38,s.row*CH+CH*0.6);
+      ctx.lineTo(px+sw2*0.38,s.row*CH+CH*0.6);
+      ctx.closePath();ctx.fill();ctx.stroke();
+    }
+    if(s.showRange){
+      ctx.strokeStyle='rgba(180,180,180,0.55)';ctx.lineWidth=1.5;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.arc(sx,sy,CW*0.7,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  });
+
   // Bombas en camino
   if(state.bombs)state.bombs.forEach(function(b){
     var bx=(b.col+0.5)*CW, by=(b.row+0.5)*CH;
     var pulse=0.6+0.4*Math.sin(b.timer*0.25);
     var br=CW*0.32;
     ctx.save();
+    if(b.showRange){
+      ctx.strokeStyle='rgba(220,80,0,0.55)';ctx.lineWidth=1.5;
+      ctx.setLineDash([4,3]);
+      ctx.beginPath();ctx.arc(bx,by,CW*1.8,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);
+    }
     // Aura pulsante roja
     ctx.fillStyle="rgba(220,50,0,"+(0.18*pulse)+")";
     ctx.beginPath();ctx.arc(bx,by,br*1.7,0,Math.PI*2);ctx.fill();
@@ -1534,6 +1590,13 @@ canvas.addEventListener('click', e=>{
     if(!state.bombs)state.bombs=[];
     state.coins-=tp.cost;state.bombs.push({col,row,timer:180});setMsg("Bomba colocada!");updateHUD();return;
   }
+  if(state.selectedType==="spikes"){
+    if(!PATH_SET.has(key)){setMsg("Los pinchos van en el camino");return;}
+    if((state.spikes||[]).find(s=>s.col===col&&s.row===row)){setMsg("Ya hay pinchos aqui");return;}
+    if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
+    if(!state.spikes)state.spikes=[];
+    state.coins-=tp.cost;state.spikes.push({col,row,cd:{}});setMsg("Pinchos colocados!");updateHUD();return;
+  }
   if(PATH_SET.has(key)){setMsg("No puedes construir aqui");return;}
   if(state.towers.find(t=>t.col===col&&t.row===row)){setMsg("Ya hay una torre aqui");return;}
   if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
@@ -1550,6 +1613,8 @@ canvas.addEventListener('mousemove', e=>{
   const my=(e.clientY-rect.top)*(canvas.height/rect.height);
   const col=Math.floor(mx/CW), row=Math.floor(my/CH);
   state.towers.forEach(t=>{ t.showRange=t.col===col&&t.row===row; });
+  if(state.bombs)state.bombs.forEach(b=>{ b.showRange=b.col===col&&b.row===row; });
+  if(state.spikes)state.spikes.forEach(s=>{ s.showRange=s.col===col&&s.row===row; });
 });
 
 document.querySelectorAll('.tbtn').forEach(btn=>{
@@ -1580,6 +1645,6 @@ document.getElementById("soundBtn").addEventListener("click",function(){soundEna
 document.getElementById('menuBtn').addEventListener('click', ()=> showScreen('screen-menu'));
 
 // Estado inicial vacío — se llena al elegir dificultad
-let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
+let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
 loop();
 </script>
