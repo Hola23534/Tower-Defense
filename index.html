@@ -440,7 +440,7 @@ button:disabled{opacity:0.3;cursor:default;}
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#4a3a2a;font-size:14px">💥</div>
-      <div><b>Cañón</b> — 80💰 · dispara una bala de cañón cada 7 segundos · 6 dmg · apunta al enemigo más cercano · coloca en el camino</div>
+      <div><b>Cañón</b> — 80💰 · dispara una bala cada 7 segundos · 6 dmg · la bala <b>atraviesa</b> a todos los enemigos · apunta al más cercano · se coloca en hierba</div>
     </div>
   </div>
 
@@ -582,7 +582,7 @@ button:disabled{opacity:0.3;cursor:default;}
               <span class="tbtn-stats">25💰 · 1 dmg · camino</span>
             </div>
           </button>
-          <button class="tbtn" data-type="cannon" title="Cañón: dispara cada 7s, 6 dmg por bala, se coloca en el camino">
+          <button class="tbtn" data-type="cannon" title="Cañón: dispara cada 7s, 6 dmg por bala, atraviesa enemigos, se coloca en hierba">
             <div class="tower-icon" style="background:#4a3a2a;font-size:16px">💥</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Cañón</span>
@@ -759,7 +759,7 @@ function resetGame(){
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
   PATH = generatePath();
   PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
-  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannons:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
@@ -1300,9 +1300,30 @@ function update(){
 
   // Torres disparan
   state.towers.forEach(t=>{
+    const tp = TOWER_TYPES[t.type];
+    // ── Cañón: lógica especial (dispara cada 7s independientemente) ──
+    if(t.type==='cannon'){
+      t.cannon_cd = (t.cannon_cd||0) + 1;
+      const ctx2x=(t.col+0.5)*CW, ctx2y=(t.row+0.5)*CH;
+      // Apuntar al enemigo más próximo
+      let nearest=null, nearDist=Infinity;
+      state.enemies.forEach(function(e){
+        var p=pathPos(e.t); if(!p)return;
+        var d=dist(ctx2x,ctx2y,p.x,p.y);
+        if(d<nearDist){nearDist=d;nearest=p;}
+      });
+      if(nearest) t.angle=Math.atan2(nearest.y-ctx2y,nearest.x-ctx2x);
+      if(t.cannon_cd>=420){
+        t.cannon_cd=0;
+        var spd=4.5;
+        if(!state.cannonBullets)state.cannonBullets=[];
+        state.cannonBullets.push({x:ctx2x,y:ctx2y,vx:Math.cos(t.angle)*spd,vy:Math.sin(t.angle)*spd,dmg:6,hit:false});
+        playSound('shot_heavy');
+      }
+      return;
+    }
     t.cd = (t.cd||0) - 1;
     if(t.cd > 0) return;
-    const tp = TOWER_TYPES[t.type];
     if(tp.slowTower) return;
     const rangePx = towerRange(t) * CW;
     const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
@@ -1417,46 +1438,24 @@ function update(){
     });
   });
 
-  // Cañones — disparan cada 7s (420 frames) sin importar si hay enemigos
-  if(!state.cannons)state.cannons=[];
+  // Mover balas de cañón (atraviesan a todos los enemigos)
   if(!state.cannonBullets)state.cannonBullets=[];
-  state.cannons.forEach(function(c){
-    c.cd=(c.cd||0)+1;
-    // Apuntar al enemigo más cercano (o mantener ángulo actual si no hay)
-    var cx2=(c.col+0.5)*CW, cy2=(c.row+0.5)*CH;
-    var nearest=null, nearDist=Infinity;
-    state.enemies.forEach(function(e){
-      var p=pathPos(e.t); if(!p)return;
-      var d=dist(cx2,cy2,p.x,p.y);
-      if(d<nearDist){nearDist=d;nearest=p;}
-    });
-    if(nearest){c.angle=Math.atan2(nearest.y-cy2,nearest.x-cx2);}
-    // Disparar cada 420 frames
-    if(c.cd>=420){
-      c.cd=0;
-      var spd=4.5;
-      state.cannonBullets.push({
-        x:cx2,y:cy2,
-        vx:Math.cos(c.angle)*spd,vy:Math.sin(c.angle)*spd,
-        dmg:6,hit:false
-      });
-      playSound('shot_heavy');
-    }
-  });
-  // Mover balas de cañón
   state.cannonBullets.forEach(function(b){
     b.x+=b.vx; b.y+=b.vy;
-    // Daño a enemigos cercanos
+    if(!b.hit_ids)b.hit_ids={};
+    // Daño a enemigos cercanos (sin detenerse — atraviesa)
     state.enemies.forEach(function(e){
       if(e.dead)return;
+      if(b.hit_ids[e.id])return; // ya golpeó a este enemigo
       var p=pathPos(e.t);if(!p)return;
-      if(dist(b.x,b.y,p.x,p.y)<CW*0.38){
-        e.hp-=b.dmg;b.hit=true;
+      if(dist(b.x,b.y,p.x,p.y)<CW*0.45){
+        b.hit_ids[e.id]=true;
+        e.hp-=b.dmg;
         if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');}
       }
     });
-    // Eliminar si sale del canvas
-    if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height)b.hit=true;
+    // Eliminar solo al salir del canvas
+    if(b.x<-20||b.x>canvas.width+20||b.y<-20||b.y>canvas.height+20)b.hit=true;
   });
   state.cannonBullets=state.cannonBullets.filter(function(b){return !b.hit;});
 
@@ -1528,6 +1527,15 @@ function draw(){
       if(tp.slowTower){ctx.fillStyle="rgba(100,180,255,0.08)";ctx.beginPath();ctx.arc(tx,ty,towerRange(t)*CW,0,Math.PI*2);ctx.fill();}
     }
     if(t.type==='helicopter') drawHelicopter(ctx, tx, ty, t.angle ?? -Math.PI/2, r);
+    else if(t.type==='cannon'){
+      drawCannonObj(ctx, t.col, t.row, t.angle ?? 0, t.showRange);
+      // Arco de progreso de recarga
+      var cprog=(t.cannon_cd||0)/420;
+      ctx.save();
+      ctx.strokeStyle='rgba(255,200,50,0.75)'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(tx,ty,CW*0.44,-Math.PI/2,-Math.PI/2+cprog*Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
     else drawSoldier(ctx, tx, ty, t.type, t.angle ?? -Math.PI/2, r);
     {var lv=t.level||1;if(lv>1){ctx.fillStyle=lv===3?"#FFD700":"#88ccff";ctx.font="bold "+Math.round(CW*0.22)+"px sans-serif";ctx.textAlign="right";ctx.textBaseline="top";ctx.fillText(lv===3?"+2":"+1",tx+r*0.85,ty-r*0.85);}}
     ctx.lineWidth=1;
@@ -1554,18 +1562,6 @@ function draw(){
       ctx.beginPath();ctx.arc(sx,sy,CW*0.7,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
     }
-    ctx.restore();
-  });
-
-  // Cañones en camino
-  if(state.cannons)state.cannons.forEach(function(c){
-    drawCannonObj(ctx, c.col, c.row, c.angle||(-Math.PI/2), c.showRange);
-    // Indicador de cooldown: arco de recarga
-    var cx2=(c.col+0.5)*CW, cy2=(c.row+0.5)*CH;
-    var prog=(c.cd||0)/420;
-    ctx.save();
-    ctx.strokeStyle='rgba(255,200,50,0.7)'; ctx.lineWidth=2.5;
-    ctx.beginPath(); ctx.arc(cx2,cy2,CW*0.44,-Math.PI/2,-Math.PI/2+prog*Math.PI*2); ctx.stroke();
     ctx.restore();
   });
 
@@ -1814,14 +1810,6 @@ canvas.addEventListener('click', e=>{
     if(!state.spikes)state.spikes=[];
     state.coins-=tp.cost;state.spikes.push({col,row,cd:{}});setMsg("Pinchos colocados!");updateHUD();return;
   }
-  if(state.selectedType==="cannon"){
-    if(!PATH_SET.has(key)){setMsg("El cañón va en el camino");return;}
-    if((state.cannons||[]).find(c=>c.col===col&&c.row===row)){setMsg("Ya hay un cañón aquí");return;}
-    if((state.bombs||[]).find(b=>b.col===col&&b.row===row)||(state.spikes||[]).find(s=>s.col===col&&s.row===row)){setMsg("Ya hay algo en esa casilla");return;}
-    if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
-    if(!state.cannons)state.cannons=[];
-    state.coins-=tp.cost;state.cannons.push({col,row,cd:0,angle:-Math.PI/2,showRange:false});setMsg("Cañón colocado!");updateHUD();return;
-  }
   if(PATH_SET.has(key)){setMsg("No puedes construir aqui");return;}
   if(state.towers.find(t=>t.col===col&&t.row===row)){setMsg("Ya hay una torre aqui");return;}
   if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
@@ -1840,7 +1828,6 @@ canvas.addEventListener('mousemove', e=>{
   state.towers.forEach(t=>{ t.showRange=t.col===col&&t.row===row; });
   if(state.bombs)state.bombs.forEach(b=>{ b.showRange=b.col===col&&b.row===row; });
   if(state.spikes)state.spikes.forEach(s=>{ s.showRange=s.col===col&&s.row===row; });
-  if(state.cannons)state.cannons.forEach(c=>{ c.showRange=c.col===col&&c.row===row; });
 });
 
 document.querySelectorAll('.tbtn').forEach(btn=>{
