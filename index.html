@@ -518,49 +518,49 @@ button:disabled{opacity:0.3;cursor:default;}
             <div class="tower-icon" style="background:#185FA5">B</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Básica</span>
-              <span class="tbtn-stats">50💰 · 1 dmg</span>
+              <span class="tbtn-stats">50💰</span>
             </div>
           </button>
           <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
             <div class="tower-icon" style="background:#1a5fa0">R</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Rápida</span>
-              <span class="tbtn-stats">80💰 · 0.7 dmg</span>
+              <span class="tbtn-stats">80💰</span>
             </div>
           </button>
           <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
             <div class="tower-icon" style="background:#712B13">P</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Pesada</span>
-              <span class="tbtn-stats">120💰 · 3 dmg</span>
+              <span class="tbtn-stats">120💰</span>
             </div>
           </button>
           <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
             <div class="tower-icon" style="background:#c8a000">V</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Jetpack</span>
-              <span class="tbtn-stats">200💰 · 1.8 dmg · Aéreo</span>
+              <span class="tbtn-stats">200💰 · ✈️ Aéreo</span>
             </div>
           </button>
           <button class="tbtn" data-type="ice" title="Enfriador: ralentiza tierra y aire al 45%">
             <div class="tower-icon" style="background:#2a6fa8">H</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Enfriador</span>
-              <span class="tbtn-stats">90💰 · ralentiza · Tierra+Aire</span>
+              <span class="tbtn-stats">90💰 · ralentiza</span>
             </div>
           </button>
           <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca terrestre y aéreo, coste alto">
             <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Élite</span>
-              <span class="tbtn-stats">1000💰 · 4 dmg</span>
+              <span class="tbtn-stats">1000💰</span>
             </div>
           </button>
           <button class="tbtn" data-type="helicopter" title="Helicóptero: 0.7 dmg rápido, ataca terrestre y aéreo">
             <div class="tower-icon" style="background:#2a7a4a;font-size:16px">🚁</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Helicóptero</span>
-              <span class="tbtn-stats">150💰 · 0.7 dmg · Tierra+Aire</span>
+              <span class="tbtn-stats">150💰 · 🌐 T+A</span>
             </div>
           </button>
         </div>
@@ -572,21 +572,21 @@ button:disabled{opacity:0.3;cursor:default;}
             <div class="tower-icon" style="background:#8B4513">💣</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Bomba</span>
-              <span class="tbtn-stats">40💰 · 10 dmg · 3s</span>
+              <span class="tbtn-stats">40💰 · 3s</span>
             </div>
           </button>
           <button class="tbtn" data-type="spikes" title="Pinchos: coloca en el camino, 1 dmg al pisarlos">
             <div class="tower-icon" style="background:#666;font-size:16px">▲</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Pinchos</span>
-              <span class="tbtn-stats">25💰 · 1 dmg · camino</span>
+              <span class="tbtn-stats">25💰 · camino</span>
             </div>
           </button>
           <button class="tbtn" data-type="cannon" title="Cañón: dispara cada 7s, 6 dmg por bala, atraviesa enemigos, se coloca en hierba">
             <div class="tower-icon" style="background:#4a3a2a;font-size:16px">💥</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Cañón</span>
-              <span class="tbtn-stats">80💰 · 6 dmg · cada 7s</span>
+              <span class="tbtn-stats">80💰 · cada 7s</span>
             </div>
           </button>
         </div>
@@ -1120,17 +1120,17 @@ function drawCannonObj(ctx, col, row, angle, showRange){
   ctx.strokeStyle='#555'; ctx.lineWidth=1;
   ctx.beginPath(); ctx.ellipse(cx+CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,0.3,0,Math.PI*2); ctx.stroke();
   ctx.beginPath(); ctx.ellipse(cx-CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,-0.3,0,Math.PI*2); ctx.stroke();
-  // Cañón (tubo apuntando en dirección angle)
+  // Cañón (tubo apuntando en dirección angle; angle=0 = derecha)
   ctx.save();
   ctx.translate(cx,cy);
   ctx.rotate(angle);
   ctx.fillStyle='#4a4a4a';
-  ctx.fillRect(-CW*0.1,-CW*0.5,CW*0.2,CW*0.52);
+  ctx.fillRect(0,-CW*0.1,CW*0.5,CW*0.2);       // tubo horizontal (hacia +x local = dirección angle)
   // Boca del cañón
   ctx.fillStyle='#333';
-  ctx.fillRect(-CW*0.12,-CW*0.52,CW*0.24,CW*0.1);
+  ctx.fillRect(CW*0.44,-CW*0.12,CW*0.1,CW*0.24); // anillo de boca
   ctx.fillStyle='#6a6a6a';
-  ctx.fillRect(-CW*0.07,-CW*0.06,CW*0.14,CW*0.12);
+  ctx.fillRect(-CW*0.06,-CW*0.07,CW*0.12,CW*0.14); // bloque central
   ctx.restore();
   ctx.lineWidth=1; ctx.restore();
 }
@@ -1814,7 +1814,7 @@ canvas.addEventListener('click', e=>{
   if(state.towers.find(t=>t.col===col&&t.row===row)){setMsg("Ya hay una torre aqui");return;}
   if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
   state.coins-=tp.cost;
-  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false,angle:-Math.PI/2,level:1});
+  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false,angle:state.selectedType==='cannon'?0:-Math.PI/2,level:1});
   state.totalTowersPlaced=(state.totalTowersPlaced||0)+1;
   if(state.selectedType==="elite")state.elitePlaced=(state.elitePlaced||0)+1;
   setMsg("Torre colocada");checkAch();updateHUD();
