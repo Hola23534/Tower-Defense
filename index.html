@@ -416,11 +416,15 @@ button:disabled{opacity:0.3;cursor:default;}
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#2a6fa8">H</div>
-      <div><b>Enfriador</b> — 90💰 · ralentiza enemigos al 45% de velocidad <span class="tag-ground">🏔️ Terrestre</span></div>
+      <div><b>Enfriador</b> — 90💰 · ralentiza enemigos al 45% de velocidad <span class="tag-air">🌐 Tierra+Aire</span></div>
     </div>
     <div class="expl-row">
       <div class="expl-dot" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
-      <div><b>Élite</b> — 1000💰 · 4 dmg · uniforme blanco, rifle dorado <span class="tag-air">✈️ Aéreo</span></div>
+      <div><b>Élite</b> — 1000💰 · 4 dmg · uniforme blanco, rifle dorado <span class="tag-air">🌐 Tierra+Aire</span></div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#2a7a4a;font-size:14px">🚁</div>
+      <div><b>Helicóptero</b> — 150💰 · 0.7 dmg · ataca rápido, rota hacia el enemigo <span class="tag-air">🌐 Tierra+Aire</span></div>
     </div>
   </div>
 
@@ -433,6 +437,10 @@ button:disabled{opacity:0.3;cursor:default;}
     <div class="expl-row">
       <div class="expl-dot" style="background:#666;font-size:14px">▲</div>
       <div><b>Pinchos</b> — 25💰 · trampa permanente en el camino · hace 1 dmg cada vez que un enemigo los pisa</div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#4a3a2a;font-size:14px">💥</div>
+      <div><b>Cañón</b> — 80💰 · dispara una bala de cañón cada 7 segundos · 6 dmg · apunta al enemigo más cercano · coloca en el camino</div>
     </div>
   </div>
 
@@ -534,18 +542,25 @@ button:disabled{opacity:0.3;cursor:default;}
               <span class="tbtn-stats">200💰 · 1.8 dmg · Aéreo</span>
             </div>
           </button>
-          <button class="tbtn" data-type="ice" title="Enfriador: ralentiza enemigos al 45%">
+          <button class="tbtn" data-type="ice" title="Enfriador: ralentiza tierra y aire al 45%">
             <div class="tower-icon" style="background:#2a6fa8">H</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Enfriador</span>
-              <span class="tbtn-stats">90💰 · ralentiza</span>
+              <span class="tbtn-stats">90💰 · ralentiza · Tierra+Aire</span>
             </div>
           </button>
-          <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca aéreos, coste alto">
+          <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca terrestre y aéreo, coste alto">
             <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
             <div class="tbtn-info">
               <span class="tbtn-name">Élite</span>
               <span class="tbtn-stats">1000💰 · 4 dmg</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="helicopter" title="Helicóptero: 0.7 dmg rápido, ataca terrestre y aéreo">
+            <div class="tower-icon" style="background:#2a7a4a;font-size:16px">🚁</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Helicóptero</span>
+              <span class="tbtn-stats">150💰 · 0.7 dmg · Tierra+Aire</span>
             </div>
           </button>
         </div>
@@ -565,6 +580,13 @@ button:disabled{opacity:0.3;cursor:default;}
             <div class="tbtn-info">
               <span class="tbtn-name">Pinchos</span>
               <span class="tbtn-stats">25💰 · 1 dmg · camino</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="cannon" title="Cañón: dispara cada 7s, 6 dmg por bala, se coloca en el camino">
+            <div class="tower-icon" style="background:#4a3a2a;font-size:16px">💥</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Cañón</span>
+              <span class="tbtn-stats">80💰 · 6 dmg · cada 7s</span>
             </div>
           </button>
         </div>
@@ -722,11 +744,13 @@ const TOWER_TYPES = {
   basic:   {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B', targeting:'ground'},
   fast:    {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R', targeting:'ground'},
   heavy:   {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P', targeting:'ground'},
-  elite:   {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E', targeting:'air'},
-  jetpack: {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air'},
-  ice:     {color:'#2a6fa8', rangeColor:'#88ccff', range:2.2, fireRate:9999, dmg:0,   cost:90,   bullet:'#88ccff', label:'H', targeting:'ground', slowTower:true},
-  bomb:    {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10,  cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
-  spikes:  {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,   cost:25,   bullet:'#aaa',    label:'▲', targeting:'ground'},
+  elite:      {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E', targeting:'both'},
+  jetpack:    {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air'},
+  ice:        {color:'#2a6fa8', rangeColor:'#88ccff', range:2.2, fireRate:9999, dmg:0,  cost:90,   bullet:'#88ccff', label:'H', targeting:'both', slowTower:true},
+  helicopter: {color:'#2a7a4a', rangeColor:'#5acc88', range:2.8, fireRate:30, dmg:0.7, cost:150,  bullet:'#5acc88', label:'🚁', targeting:'both'},
+  bomb:       {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10, cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
+  spikes:     {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,  cost:25,   bullet:'#aaa',    label:'▲', targeting:'ground'},
+  cannon:     {color:'#4a3a2a', rangeColor:'#886644', range:0,   fireRate:9999, dmg:6,  cost:80,   bullet:'#886644', label:'💥', targeting:'ground'},
 };
 
 
@@ -735,7 +759,7 @@ function resetGame(){
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
   PATH = generatePath();
   PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
-  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannons:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0};
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
@@ -1000,6 +1024,115 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   }
   ctx.lineWidth=1;
   ctx.restore();
+}
+
+// ── DIBUJO: Helicóptero top-down ──
+function drawHelicopter(ctx, tx, ty, angle, r){
+  ctx.save();
+  ctx.translate(tx, ty);
+  ctx.rotate(angle + Math.PI/2);
+
+  // Sombra
+  ctx.fillStyle='rgba(0,0,0,0.25)';
+  ctx.beginPath(); ctx.ellipse(r*0.1,r*0.2,r*0.9,r*0.55,0,0,Math.PI*2); ctx.fill();
+
+  // Skids (patines de aterrizaje)
+  ctx.strokeStyle='#444'; ctx.lineWidth=r*0.1;
+  ctx.beginPath(); ctx.moveTo(-r*0.7,r*0.6); ctx.lineTo(r*0.7,r*0.6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-r*0.7,-r*0.5); ctx.lineTo(r*0.7,-r*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-r*0.5,r*0.6); ctx.lineTo(-r*0.5,-r*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r*0.5,r*0.6); ctx.lineTo(r*0.5,-r*0.5); ctx.stroke();
+
+  // Fuselaje principal (cuerpo ovalado)
+  var bg=ctx.createLinearGradient(-r*0.6,-r*0.4,r*0.6,r*0.4);
+  bg.addColorStop(0,'#3aaa6a'); bg.addColorStop(1,'#1a6a3a');
+  ctx.fillStyle=bg;
+  ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r*0.42,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#1a5a2a'; ctx.lineWidth=r*0.06;
+  ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r*0.42,0,0,Math.PI*2); ctx.stroke();
+
+  // Cabina de cristal (frontal, transparente)
+  ctx.fillStyle='rgba(160,220,255,0.65)';
+  ctx.beginPath(); ctx.ellipse(-r*0.22,-r*0.05,r*0.32,r*0.26,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(80,160,220,0.8)'; ctx.lineWidth=r*0.05;
+  ctx.beginPath(); ctx.ellipse(-r*0.22,-r*0.05,r*0.32,r*0.26,0,0,Math.PI*2); ctx.stroke();
+  // Reflejo en cabina
+  ctx.fillStyle='rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.ellipse(-r*0.3,-r*0.12,r*0.12,r*0.09,-0.4,0,Math.PI*2); ctx.fill();
+
+  // Cola (boom trasero)
+  ctx.fillStyle='#2a8a4a';
+  ctx.beginPath();
+  ctx.moveTo(r*0.55,-r*0.1); ctx.lineTo(r*1.1,r*0.04); ctx.lineTo(r*1.0,r*0.14); ctx.lineTo(r*0.55,r*0.1);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#1a6a3a'; ctx.lineWidth=r*0.05;
+  ctx.beginPath(); ctx.moveTo(r*0.55,-r*0.1); ctx.lineTo(r*1.1,r*0.04); ctx.lineTo(r*1.0,r*0.14); ctx.lineTo(r*0.55,r*0.1); ctx.closePath(); ctx.stroke();
+
+  // Rotor de cola (pequeño)
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=r*0.07;
+  ctx.beginPath(); ctx.moveTo(r*1.05,-r*0.14); ctx.lineTo(r*1.05,r*0.22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(r*0.9,r*0.04); ctx.lineTo(r*1.2,r*0.04); ctx.stroke();
+
+  // Rotor principal (aspas girando — usar angle como timer via t.angle)
+  // Las aspas se dibujan en espacio local, rotadas por tiempo global
+  var rotorA = Date.now()*0.015; // rotación continua
+  ctx.save();
+  ctx.strokeStyle='rgba(60,60,60,0.9)'; ctx.lineWidth=r*0.09;
+  ctx.lineCap='round';
+  for(var i=0;i<3;i++){
+    var a=rotorA+(i/3)*Math.PI*2;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(a)*r*0.1, Math.sin(a)*r*0.1);
+    ctx.lineTo(Math.cos(a)*r*0.88, Math.sin(a)*r*0.88);
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Hub central del rotor
+  ctx.fillStyle='#333';
+  ctx.beginPath(); ctx.arc(0,0,r*0.13,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#666';
+  ctx.beginPath(); ctx.arc(0,0,r*0.07,0,Math.PI*2); ctx.fill();
+
+  ctx.lineWidth=1; ctx.lineCap='butt'; ctx.restore();
+}
+
+// ── DIBUJO: Cañón top-down ──
+function drawCannonObj(ctx, col, row, angle, showRange){
+  var cx=(col+0.5)*CW, cy=(row+0.5)*CH;
+  ctx.save();
+  if(showRange){
+    ctx.strokeStyle='rgba(136,102,68,0.55)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([4,3]);
+    ctx.beginPath(); ctx.arc(cx,cy,CW*2.5,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // Base circular oscura
+  var bg=ctx.createRadialGradient(cx-CW*0.1,cy-CW*0.1,CW*0.05,cx,cy,CW*0.38);
+  bg.addColorStop(0,'#6a5a4a'); bg.addColorStop(1,'#2a1a0a');
+  ctx.fillStyle=bg;
+  ctx.beginPath(); ctx.arc(cx,cy,CW*0.38,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#111'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,CW*0.38,0,Math.PI*2); ctx.stroke();
+  // Ruedas (dos laterales)
+  ctx.fillStyle='#222';
+  ctx.beginPath(); ctx.ellipse(cx+CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,0.3,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx-CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,-0.3,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#555'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.ellipse(cx+CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,0.3,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(cx-CW*0.3,cy+CW*0.22,CW*0.13,CW*0.18,-0.3,0,Math.PI*2); ctx.stroke();
+  // Cañón (tubo apuntando en dirección angle)
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(angle);
+  ctx.fillStyle='#4a4a4a';
+  ctx.fillRect(-CW*0.1,-CW*0.5,CW*0.2,CW*0.52);
+  // Boca del cañón
+  ctx.fillStyle='#333';
+  ctx.fillRect(-CW*0.12,-CW*0.52,CW*0.24,CW*0.1);
+  ctx.fillStyle='#6a6a6a';
+  ctx.fillRect(-CW*0.07,-CW*0.06,CW*0.14,CW*0.12);
+  ctx.restore();
+  ctx.lineWidth=1; ctx.restore();
 }
 
 // ── DIBUJO: Zombie top-down ──
@@ -1284,6 +1417,49 @@ function update(){
     });
   });
 
+  // Cañones — disparan cada 7s (420 frames) sin importar si hay enemigos
+  if(!state.cannons)state.cannons=[];
+  if(!state.cannonBullets)state.cannonBullets=[];
+  state.cannons.forEach(function(c){
+    c.cd=(c.cd||0)+1;
+    // Apuntar al enemigo más cercano (o mantener ángulo actual si no hay)
+    var cx2=(c.col+0.5)*CW, cy2=(c.row+0.5)*CH;
+    var nearest=null, nearDist=Infinity;
+    state.enemies.forEach(function(e){
+      var p=pathPos(e.t); if(!p)return;
+      var d=dist(cx2,cy2,p.x,p.y);
+      if(d<nearDist){nearDist=d;nearest=p;}
+    });
+    if(nearest){c.angle=Math.atan2(nearest.y-cy2,nearest.x-cx2);}
+    // Disparar cada 420 frames
+    if(c.cd>=420){
+      c.cd=0;
+      var spd=4.5;
+      state.cannonBullets.push({
+        x:cx2,y:cy2,
+        vx:Math.cos(c.angle)*spd,vy:Math.sin(c.angle)*spd,
+        dmg:6,hit:false
+      });
+      playSound('shot_heavy');
+    }
+  });
+  // Mover balas de cañón
+  state.cannonBullets.forEach(function(b){
+    b.x+=b.vx; b.y+=b.vy;
+    // Daño a enemigos cercanos
+    state.enemies.forEach(function(e){
+      if(e.dead)return;
+      var p=pathPos(e.t);if(!p)return;
+      if(dist(b.x,b.y,p.x,p.y)<CW*0.38){
+        e.hp-=b.dmg;b.hit=true;
+        if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');}
+      }
+    });
+    // Eliminar si sale del canvas
+    if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height)b.hit=true;
+  });
+  state.cannonBullets=state.cannonBullets.filter(function(b){return !b.hit;});
+
   // Partículas
   // Bombas
   if(!state.bombs)state.bombs=[];
@@ -1351,7 +1527,8 @@ function draw(){
       ctx.setLineDash([]);
       if(tp.slowTower){ctx.fillStyle="rgba(100,180,255,0.08)";ctx.beginPath();ctx.arc(tx,ty,towerRange(t)*CW,0,Math.PI*2);ctx.fill();}
     }
-    drawSoldier(ctx, tx, ty, t.type, t.angle ?? -Math.PI/2, r);
+    if(t.type==='helicopter') drawHelicopter(ctx, tx, ty, t.angle ?? -Math.PI/2, r);
+    else drawSoldier(ctx, tx, ty, t.type, t.angle ?? -Math.PI/2, r);
     {var lv=t.level||1;if(lv>1){ctx.fillStyle=lv===3?"#FFD700":"#88ccff";ctx.font="bold "+Math.round(CW*0.22)+"px sans-serif";ctx.textAlign="right";ctx.textBaseline="top";ctx.fillText(lv===3?"+2":"+1",tx+r*0.85,ty-r*0.85);}}
     ctx.lineWidth=1;
   });
@@ -1377,6 +1554,30 @@ function draw(){
       ctx.beginPath();ctx.arc(sx,sy,CW*0.7,0,Math.PI*2);ctx.stroke();
       ctx.setLineDash([]);
     }
+    ctx.restore();
+  });
+
+  // Cañones en camino
+  if(state.cannons)state.cannons.forEach(function(c){
+    drawCannonObj(ctx, c.col, c.row, c.angle||(-Math.PI/2), c.showRange);
+    // Indicador de cooldown: arco de recarga
+    var cx2=(c.col+0.5)*CW, cy2=(c.row+0.5)*CH;
+    var prog=(c.cd||0)/420;
+    ctx.save();
+    ctx.strokeStyle='rgba(255,200,50,0.7)'; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(cx2,cy2,CW*0.44,-Math.PI/2,-Math.PI/2+prog*Math.PI*2); ctx.stroke();
+    ctx.restore();
+  });
+
+  // Balas de cañón
+  if(state.cannonBullets)state.cannonBullets.forEach(function(b){
+    ctx.save();
+    var bg2=ctx.createRadialGradient(b.x-2,b.y-2,1,b.x,b.y,6);
+    bg2.addColorStop(0,'#ddd'); bg2.addColorStop(1,'#333');
+    ctx.fillStyle=bg2;
+    ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle='#111'; ctx.lineWidth=0.8;
+    ctx.beginPath(); ctx.arc(b.x,b.y,5,0,Math.PI*2); ctx.stroke();
     ctx.restore();
   });
 
@@ -1529,10 +1730,10 @@ let _tmIdx = -1;
 function showTowerMenu(idx,cx,cy){
   _tmIdx=idx;
   var t=state.towers[idx],tp=TOWER_TYPES[t.type];
-  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador"};
+  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador",helicopter:"Helicoptero"};
   var menu=document.getElementById("tower-menu");
   document.getElementById("tmenu-name").textContent=(names[t.type]||t.type)+" (Nv."+(t.level||1)+")";
-  document.getElementById("tmenu-target").textContent=tp.slowTower?"Ralentiza enemigos":tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
+  document.getElementById("tmenu-target").textContent=tp.slowTower?"Ralentiza TERRESTRE y AEREO":tp.targeting==="both"?"Ataca TERRESTRE y AEREO":tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
   document.getElementById("tmenu-stats").textContent=(tp.slowTower?"":("Dano: "+towerDmg(t).toFixed(1)+"\n"))+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3";
   var upBtn=document.getElementById("tmenu-upgrade");
   if(!upBtn){
@@ -1613,6 +1814,14 @@ canvas.addEventListener('click', e=>{
     if(!state.spikes)state.spikes=[];
     state.coins-=tp.cost;state.spikes.push({col,row,cd:{}});setMsg("Pinchos colocados!");updateHUD();return;
   }
+  if(state.selectedType==="cannon"){
+    if(!PATH_SET.has(key)){setMsg("El cañón va en el camino");return;}
+    if((state.cannons||[]).find(c=>c.col===col&&c.row===row)){setMsg("Ya hay un cañón aquí");return;}
+    if((state.bombs||[]).find(b=>b.col===col&&b.row===row)||(state.spikes||[]).find(s=>s.col===col&&s.row===row)){setMsg("Ya hay algo en esa casilla");return;}
+    if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
+    if(!state.cannons)state.cannons=[];
+    state.coins-=tp.cost;state.cannons.push({col,row,cd:0,angle:-Math.PI/2,showRange:false});setMsg("Cañón colocado!");updateHUD();return;
+  }
   if(PATH_SET.has(key)){setMsg("No puedes construir aqui");return;}
   if(state.towers.find(t=>t.col===col&&t.row===row)){setMsg("Ya hay una torre aqui");return;}
   if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
@@ -1631,6 +1840,7 @@ canvas.addEventListener('mousemove', e=>{
   state.towers.forEach(t=>{ t.showRange=t.col===col&&t.row===row; });
   if(state.bombs)state.bombs.forEach(b=>{ b.showRange=b.col===col&&b.row===row; });
   if(state.spikes)state.spikes.forEach(s=>{ s.showRange=s.col===col&&s.row===row; });
+  if(state.cannons)state.cannons.forEach(c=>{ c.showRange=c.col===col&&c.row===row; });
 });
 
 document.querySelectorAll('.tbtn').forEach(btn=>{
