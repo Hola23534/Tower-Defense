@@ -266,11 +266,12 @@ button:disabled{opacity:0.3;cursor:default;}
 
 /* ── TOWER ICON BUTTONS ── */
 #tower-select{
-  display:flex;flex-direction:column;gap:6px;margin-bottom:8px;
+  display:flex;flex-direction:row;gap:12px;margin-bottom:8px;align-items:flex-start;flex-wrap:wrap;
 }
 .unit-section{display:flex;flex-direction:column;gap:3px;}
 .unit-section-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);padding:0 3px;}
 .unit-section-btns{display:flex;gap:6px;flex-wrap:wrap;}
+#section-otros{border-left:1px solid rgba(255,255,255,.1);padding-left:12px;}
 .tbtn{
   display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;
   border:1px solid rgba(255,255,255,.12);
@@ -531,7 +532,7 @@ button:disabled{opacity:0.3;cursor:default;}
         </button>
       </div>
     </div>
-    <div class="unit-section">
+    <div class="unit-section" id="section-otros">
       <div class="unit-section-label">🔧 Otros</div>
       <div class="unit-section-btns">
         <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
@@ -1312,12 +1313,42 @@ function draw(){
 
   // Bombas en camino
   if(state.bombs)state.bombs.forEach(function(b){
-    var bx=(b.col+0.5)*CW,by=(b.row+0.5)*CH;
+    var bx=(b.col+0.5)*CW, by=(b.row+0.5)*CH;
     var pulse=0.6+0.4*Math.sin(b.timer*0.25);
-    ctx.fillStyle="rgba(200,60,0,"+(0.3*pulse)+")";ctx.beginPath();ctx.arc(bx,by,CW*0.45,0,Math.PI*2);ctx.fill();
-    ctx.fillStyle="#cc3300";ctx.font="bold "+Math.round(CW*0.34)+"px sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("BOMB",bx,by);
+    var br=CW*0.32;
+    ctx.save();
+    // Aura pulsante roja
+    ctx.fillStyle="rgba(220,50,0,"+(0.18*pulse)+")";
+    ctx.beginPath();ctx.arc(bx,by,br*1.7,0,Math.PI*2);ctx.fill();
+    // Cuerpo de la bomba (esfera negra)
+    var grad=ctx.createRadialGradient(bx-br*0.3,by-br*0.35,br*0.05,bx,by,br);
+    grad.addColorStop(0,'#555');grad.addColorStop(1,'#111');
+    ctx.fillStyle=grad;
+    ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#333';ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(bx,by,br,0,Math.PI*2);ctx.stroke();
+    // Brillo
+    ctx.fillStyle='rgba(255,255,255,0.18)';
+    ctx.beginPath();ctx.ellipse(bx-br*0.28,by-br*0.32,br*0.22,br*0.14,-0.5,0,Math.PI*2);ctx.fill();
+    // Mecha
+    ctx.strokeStyle='#8B6914';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(bx+br*0.55,by-br*0.55);
+    ctx.bezierCurveTo(bx+br*0.9,by-br*1.1,bx+br*0.4,by-br*1.4,bx+br*0.6,by-br*1.6);ctx.stroke();
+    // Chispa parpadeante en la mecha
+    if(Math.sin(b.timer*0.6)>0){
+      ctx.fillStyle=Math.sin(b.timer*1.2)>0?'#FFD700':'#FF6600';
+      ctx.shadowColor='#FF8800';ctx.shadowBlur=8;
+      ctx.beginPath();ctx.arc(bx+br*0.6,by-br*1.6,br*0.18,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+    }
+    // Cuenta atrás
     var secs=Math.ceil(b.timer/60);
-    ctx.fillStyle="#fff";ctx.font="bold "+Math.round(CW*0.22)+"px sans-serif";ctx.textBaseline="bottom";ctx.fillText(secs+"s",bx,by-CW*0.32);
+    ctx.fillStyle='#fff';ctx.font='bold '+Math.round(CW*0.25)+'px sans-serif';
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=4;
+    ctx.fillText(secs+'s',bx,by+br*1.6);
+    ctx.shadowBlur=0;
+    ctx.restore();
   });
 
   // Enemigos
