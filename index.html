@@ -266,8 +266,11 @@ button:disabled{opacity:0.3;cursor:default;}
 
 /* ── TOWER ICON BUTTONS ── */
 #tower-select{
-  display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;
+  display:flex;flex-direction:column;gap:6px;margin-bottom:8px;
 }
+.unit-section{display:flex;flex-direction:column;gap:3px;}
+.unit-section-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);padding:0 3px;}
+.unit-section-btns{display:flex;gap:6px;flex-wrap:wrap;}
 .tbtn{
   display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;
   border:1px solid rgba(255,255,255,.12);
@@ -481,55 +484,65 @@ button:disabled{opacity:0.3;cursor:default;}
     <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
   </div>
   <div id="tower-select">
-    <button class="tbtn active" data-type="basic" title="Básica: 1 dmg, velocidad normal">
-      <div class="tower-icon" style="background:#185FA5">B</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Básica</span>
-        <span class="tbtn-stats">50💰 · 1 dmg</span>
+    <div class="unit-section">
+      <div class="unit-section-label">⚔️ Tropas</div>
+      <div class="unit-section-btns">
+        <button class="tbtn active" data-type="basic" title="Básica: 1 dmg, velocidad normal">
+          <div class="tower-icon" style="background:#185FA5">B</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Básica</span>
+            <span class="tbtn-stats">50💰 · 1 dmg</span>
+          </div>
+        </button>
+        <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
+          <div class="tower-icon" style="background:#1a5fa0">R</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Rápida</span>
+            <span class="tbtn-stats">80💰 · 0.7 dmg</span>
+          </div>
+        </button>
+        <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
+          <div class="tower-icon" style="background:#712B13">P</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Pesada</span>
+            <span class="tbtn-stats">120💰 · 3 dmg</span>
+          </div>
+        </button>
+        <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
+          <div class="tower-icon" style="background:#c8a000">V</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Jetpack</span>
+            <span class="tbtn-stats">200💰 · 1.8 dmg · Aéreo</span>
+          </div>
+        </button>
+        <button class="tbtn" data-type="ice" title="Enfriador: ralentiza enemigos al 45%">
+          <div class="tower-icon" style="background:#2a6fa8">H</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Enfriador</span>
+            <span class="tbtn-stats">90💰 · ralentiza</span>
+          </div>
+        </button>
+        <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca aéreos, coste alto">
+          <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Élite</span>
+            <span class="tbtn-stats">1000💰 · 4 dmg</span>
+          </div>
+        </button>
       </div>
-    </button>
-    <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
-      <div class="tower-icon" style="background:#1a5fa0">R</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Rápida</span>
-        <span class="tbtn-stats">80💰 · 0.7 dmg</span>
+    </div>
+    <div class="unit-section">
+      <div class="unit-section-label">🔧 Otros</div>
+      <div class="unit-section-btns">
+        <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
+          <div class="tower-icon" style="background:#8B4513">💣</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Bomba</span>
+            <span class="tbtn-stats">40💰 · 10 dmg · 3s · en camino</span>
+          </div>
+        </button>
       </div>
-    </button>
-    <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
-      <div class="tower-icon" style="background:#712B13">P</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Pesada</span>
-        <span class="tbtn-stats">120💰 · 3 dmg</span>
-      </div>
-    </button>
-    <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
-      <div class="tower-icon" style="background:#c8a000">V</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Jetpack</span>
-        <span class="tbtn-stats">200 coins - 1.8 dmg - Aereo</span>
-      </div>
-    </button>
-    <button class="tbtn" data-type="bomb" title="Bomba: coloca en camino, explota en 3s, 10 dmg">
-      <div class="tower-icon" style="background:#8B4513">B</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Bomba</span>
-        <span class="tbtn-stats">40 monedas - 10dmg - 3s</span>
-      </div>
-    </button>
-    <button class="tbtn" data-type="ice" title="Hielo: ralentiza enemigos al 45%">
-      <div class="tower-icon" style="background:#2a6fa8">H</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Hielo</span>
-        <span class="tbtn-stats">90 monedas - ralentiza</span>
-      </div>
-    </button>
-    <button class="tbtn" data-type="elite" title="Élite: 4 dmg, velocidad normal, coste alto">
-      <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
-      <div class="tbtn-info">
-        <span class="tbtn-name">Élite</span>
-        <span class="tbtn-stats">1000💰 · 4 dmg</span>
-      </div>
-    </button>
+    </div>
   </div>
   <canvas id="canvas" width="560" height="400"></canvas>
   <div id="controls">
@@ -685,6 +698,7 @@ const TOWER_TYPES = {
   elite:   {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E', targeting:'air'},
   jetpack: {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air'},
   ice:     {color:'#2a6fa8', rangeColor:'#88ccff', range:2.2, fireRate:9999, dmg:0,   cost:90,   bullet:'#88ccff', label:'H', targeting:'ground', slowTower:true},
+  bomb:    {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10,  cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
 };
 
 
@@ -1409,7 +1423,7 @@ let _tmIdx = -1;
 function showTowerMenu(idx,cx,cy){
   _tmIdx=idx;
   var t=state.towers[idx],tp=TOWER_TYPES[t.type];
-  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Hielo"};
+  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador"};
   var menu=document.getElementById("tower-menu");
   document.getElementById("tmenu-name").textContent=(names[t.type]||t.type)+" (Nv."+(t.level||1)+")";
   document.getElementById("tmenu-target").textContent=tp.slowTower?"Ralentiza enemigos":tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
