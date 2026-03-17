@@ -194,7 +194,12 @@ body::after{
 }
 
 /* ── GAME ── */
-#screen-game{padding:1rem;max-width:580px;width:100%;z-index:1;}
+#screen-game{display:flex;flex-direction:row;gap:10px;align-items:flex-start;padding:1rem;max-width:740px;width:100%;z-index:1;}
+#game-sidebar{width:106px;flex-shrink:0;display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:10px 8px;position:sticky;top:1rem;}
+#game-sidebar .unit-section-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);padding:0 2px;margin-bottom:2px;}
+#game-sidebar .tbtn{flex-direction:column;align-items:center;text-align:center;gap:3px;padding:8px 4px;width:100%;}
+#game-sidebar .tbtn-stats{font-size:9px;}
+#game-main{flex:1;display:flex;flex-direction:column;min-width:0;}
 #hud{
   display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:stretch;
   background:rgba(0,0,0,.35);border-radius:12px;padding:10px;
@@ -266,7 +271,7 @@ button:disabled{opacity:0.3;cursor:default;}
 
 /* ── TOWER ICON BUTTONS ── */
 #tower-select{
-  display:flex;flex-direction:row;gap:12px;margin-bottom:8px;align-items:flex-start;
+  display:flex;flex-direction:column;gap:4px;margin-bottom:8px;
 }
 .unit-section{display:flex;flex-direction:column;gap:3px;}
 .unit-section-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);padding:0 3px;}
@@ -462,99 +467,104 @@ button:disabled{opacity:0.3;cursor:default;}
 
 <!-- JUEGO -->
 <div id="screen-game" class="screen">
-  <div id="hud">
-    <div class="stat">
-      <div class="label">Vidas</div>
-      <div class="val" id="lives">20</div>
-      <div class="bar-bg"><div class="bar-fill" id="bar-lives" style="width:100%"></div></div>
-    </div>
-    <div class="stat">
-      <div class="label">Monedas</div>
-      <div class="val" id="coins">300</div>
-      <div class="bar-bg"><div class="bar-fill" id="bar-coins" style="width:30%"></div></div>
-    </div>
-    <div class="stat">
-      <div class="label">Oleada</div>
-      <div class="val" id="wave">0 / 100</div>
-      <div class="bar-bg"><div class="bar-fill" id="bar-wave" style="width:0%"></div></div>
-    </div>
-    <div class="stat" style="min-width:70px;">
-      <div class="label">Enemigos</div>
-      <div class="val" id="ecount">0</div>
-    </div>
-    <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
+
+  <!-- SIDEBAR IZQUIERDO: Otros -->
+  <div id="game-sidebar">
+    <div class="unit-section-label">🔧 Otros</div>
+    <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
+      <div class="tower-icon" style="background:#8B4513">💣</div>
+      <div class="tbtn-info">
+        <span class="tbtn-name">Bomba</span>
+        <span class="tbtn-stats">40💰 · 10dmg · 3s</span>
+      </div>
+    </button>
   </div>
-  <div id="tower-select">
-    <div class="unit-section" id="section-otros">
-      <div class="unit-section-label">🔧 Otros</div>
-      <div class="unit-section-btns">
-        <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
-          <div class="tower-icon" style="background:#8B4513">💣</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Bomba</span>
-            <span class="tbtn-stats">40💰 · 10 dmg · 3s · en camino</span>
-          </div>
-        </button>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div id="game-main">
+    <div id="hud">
+      <div class="stat">
+        <div class="label">Vidas</div>
+        <div class="val" id="lives">20</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-lives" style="width:100%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="label">Monedas</div>
+        <div class="val" id="coins">300</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-coins" style="width:30%"></div></div>
+      </div>
+      <div class="stat">
+        <div class="label">Oleada</div>
+        <div class="val" id="wave">0 / 100</div>
+        <div class="bar-bg"><div class="bar-fill" id="bar-wave" style="width:0%"></div></div>
+      </div>
+      <div class="stat" style="min-width:70px;">
+        <div class="label">Enemigos</div>
+        <div class="val" id="ecount">0</div>
+      </div>
+      <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
+    </div>
+    <div id="tower-select">
+      <div class="unit-section">
+        <div class="unit-section-label">⚔️ Tropas</div>
+        <div class="unit-section-btns">
+          <button class="tbtn active" data-type="basic" title="Básica: 1 dmg, velocidad normal">
+            <div class="tower-icon" style="background:#185FA5">B</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Básica</span>
+              <span class="tbtn-stats">50💰 · 1 dmg</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
+            <div class="tower-icon" style="background:#1a5fa0">R</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Rápida</span>
+              <span class="tbtn-stats">80💰 · 0.7 dmg</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
+            <div class="tower-icon" style="background:#712B13">P</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Pesada</span>
+              <span class="tbtn-stats">120💰 · 3 dmg</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
+            <div class="tower-icon" style="background:#c8a000">V</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Jetpack</span>
+              <span class="tbtn-stats">200💰 · 1.8 dmg · Aéreo</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="ice" title="Enfriador: ralentiza enemigos al 45%">
+            <div class="tower-icon" style="background:#2a6fa8">H</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Enfriador</span>
+              <span class="tbtn-stats">90💰 · ralentiza</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca aéreos, coste alto">
+            <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Élite</span>
+              <span class="tbtn-stats">1000💰 · 4 dmg</span>
+            </div>
+          </button>
+        </div>
       </div>
     </div>
-    <div class="unit-section">
-      <div class="unit-section-label">⚔️ Tropas</div>
-      <div class="unit-section-btns">
-        <button class="tbtn active" data-type="basic" title="Básica: 1 dmg, velocidad normal">
-          <div class="tower-icon" style="background:#185FA5">B</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Básica</span>
-            <span class="tbtn-stats">50💰 · 1 dmg</span>
-          </div>
-        </button>
-        <button class="tbtn" data-type="fast" title="Rápida: 0.7 dmg, ataca muy rápido">
-          <div class="tower-icon" style="background:#1a5fa0">R</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Rápida</span>
-            <span class="tbtn-stats">80💰 · 0.7 dmg</span>
-          </div>
-        </button>
-        <button class="tbtn" data-type="heavy" title="Pesada: 3 dmg, ataca lento">
-          <div class="tower-icon" style="background:#712B13">P</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Pesada</span>
-            <span class="tbtn-stats">120💰 · 3 dmg</span>
-          </div>
-        </button>
-        <button class="tbtn" data-type="jetpack" title="Jetpack: 1.8 dmg, ataca aereos">
-          <div class="tower-icon" style="background:#c8a000">V</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Jetpack</span>
-            <span class="tbtn-stats">200💰 · 1.8 dmg · Aéreo</span>
-          </div>
-        </button>
-        <button class="tbtn" data-type="ice" title="Enfriador: ralentiza enemigos al 45%">
-          <div class="tower-icon" style="background:#2a6fa8">H</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Enfriador</span>
-            <span class="tbtn-stats">90💰 · ralentiza</span>
-          </div>
-        </button>
-        <button class="tbtn" data-type="elite" title="Élite: 4 dmg, ataca aéreos, coste alto">
-          <div class="tower-icon" style="background:#e8e8e8;color:#1a1a2e;border:2px solid #aaa">E</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Élite</span>
-            <span class="tbtn-stats">1000💰 · 4 dmg</span>
-          </div>
-        </button>
-      </div>
+    <canvas id="canvas" width="560" height="400"></canvas>
+    <div id="controls">
+      <button id="startBtn">▶ Iniciar oleada</button>
+      <button id="autoBtn">⏩ Automático: OFF</button>
+      <button id="sellBtn">💰 Vender torre</button>
+      <div class="ctrl-sep"></div>
+      <button id="soundBtn" title="Sonido">[SND]</button>
+      <button id="resetBtn">↺ Reiniciar</button>
     </div>
+    <button id="menuBtn">← Regresar al menú principal</button>
   </div>
-  <canvas id="canvas" width="560" height="400"></canvas>
-  <div id="controls">
-    <button id="startBtn">▶ Iniciar oleada</button>
-    <button id="autoBtn">⏩ Automático: OFF</button>
-    <button id="sellBtn">💰 Vender torre</button>
-    <div class="ctrl-sep"></div>
-    <button id="soundBtn" title="Sonido">[SND]</button>
-    <button id="resetBtn">↺ Reiniciar</button>
-  </div>
-  <button id="menuBtn">← Regresar al menú principal</button>
+
 </div>
 
 <div id="tower-menu" style="display:none;position:fixed;background:rgba(10,18,40,0.97);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:16px 18px;min-width:190px;z-index:999;box-shadow:0 8px 28px rgba(0,0,0,0.6);color:#fff;font-family:inherit;">
