@@ -1337,7 +1337,7 @@ function update(){
     let sm=1;
     const ep=pathPos(e.t);
     if(ep) state.towers.forEach(t=>{
-      if(t.type==='ice'){const tx=(t.col+0.5)*CW,ty=(t.row+0.5)*CH;if(dist(tx,ty,ep.x,ep.y)<towerRange(t)*CW)sm=Math.min(sm,0.45);}
+      if(t.type==='ice'){const tx=(t.col+0.5)*CW,ty=(t.row+0.5)*CH;const slowVal=[0.45,0.28,0.12][(t.level||1)-1];if(dist(tx,ty,ep.x,ep.y)<towerRange(t)*CW)sm=Math.min(sm,slowVal);}
     });
     e.t+=e.speed*sm;
     if(e.t>=PATH.length-1){
@@ -1778,7 +1778,8 @@ function showTowerMenu(idx,cx,cy){
   var menu=document.getElementById("tower-menu");
   document.getElementById("tmenu-name").textContent=(names[t.type]||t.type)+" (Nv."+(t.level||1)+")";
   document.getElementById("tmenu-target").textContent=tp.slowTower?"Ralentiza TERRESTRE y AEREO":tp.targeting==="both"?"Ataca TERRESTRE y AEREO":tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
-  document.getElementById("tmenu-stats").textContent=(tp.slowTower?"":("Dano: "+towerDmg(t).toFixed(1)+"\n"))+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3";
+  var slowPcts=[45,28,12];
+  document.getElementById("tmenu-stats").textContent=(tp.slowTower?"Retroceso: "+slowPcts[(t.level||1)-1]+"% velocidad\n":("Dano: "+towerDmg(t).toFixed(1)+"\n"))+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3";
   var upBtn=document.getElementById("tmenu-upgrade");
   if(!upBtn){
     upBtn=document.createElement("button");upBtn.id="tmenu-upgrade";
