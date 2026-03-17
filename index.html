@@ -738,6 +738,7 @@ const ENEMY_KINDS = {
   heavy:   {color:'#7B1A1A', border:null,       radius:0.34, label:'P', flying:false},
   boss:    {color:'#A00000', border:'#FF4444',  radius:0.48, label:'J', flying:false},
   balloon: {color:'#5a8a20', border:'#88ccff',  radius:0.25, label:'G', flying:true},
+};
 
 // SOUND SYSTEM
 let _audioCtx=null,soundEnabled=true;
@@ -799,8 +800,6 @@ var UPGRADE_LEVELS={1:null,2:{dmgMult:1.6,rangeMult:1.1,costMult:0.7},3:{dmgMult
 function towerDmg(t){var u=UPGRADE_LEVELS[t.level||1];return TOWER_TYPES[t.type].dmg*(u?u.dmgMult:1);}
 function towerRange(t){var u=UPGRADE_LEVELS[t.level||1];return TOWER_TYPES[t.type].range*(u?u.rangeMult:1);}
 function upgradeCost(t){var lvl=t.level||1;if(lvl>=3)return null;return Math.round(TOWER_TYPES[t.type].cost*UPGRADE_LEVELS[lvl+1].costMult);}
-
-};
 
 // Escala de oleadas suave hasta 100, jefe cada 10 oleadas
 function buildWaveQueue(w){
