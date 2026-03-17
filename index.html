@@ -1339,6 +1339,8 @@ function update(){
     if(ep) state.towers.forEach(t=>{
       if(t.type==='ice'){const tx=(t.col+0.5)*CW,ty=(t.row+0.5)*CH;const slowVal=[0.45,0.28,0.12][(t.level||1)-1];if(dist(tx,ty,ep.x,ep.y)<towerRange(t)*CW)sm=Math.min(sm,slowVal);}
     });
+    e.frozen = sm < 1;
+    e.slowMult = sm;
     e.t+=e.speed*sm;
     if(e.t>=PATH.length-1){
       e.dead=true;state.lives=Math.max(0,state.lives-1);
@@ -1576,7 +1578,7 @@ function draw(){
     }
     if(t.type==='helicopter') drawHelicopter(ctx, tx, ty, t.angle ?? -Math.PI/2, r);
     else if(t.type==='cannon'){
-      drawCannonObj(ctx, t.col, t.row, t.angle ?? 0, t.showRange);
+      drawCannonObj(ctx, t.col, t.row, t.angle ?? 0, false);
       // Arco de progreso de recarga
       var cprog=(t.cannon_cd||0)/420;
       ctx.save();
@@ -1681,6 +1683,35 @@ function draw(){
     const r = CW * k.radius;
 
     drawZombie(ctx, pos.x, pos.y, e, r);
+
+    // Efecto de congelación
+    if(e.frozen){
+      const sm = e.slowMult ?? 0.45;
+      // Más lento → más opaco (0.45→0.25 alpha, 0.12→0.58 alpha)
+      const frostAlpha = 0.18 + (1 - sm) * 0.55;
+      ctx.save();
+      // Tinte azul helado sobre el cuerpo
+      ctx.globalAlpha = frostAlpha;
+      ctx.fillStyle = '#88ddff';
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, r*1.08, 0, Math.PI*2); ctx.fill();
+      // Cristales de hielo girando alrededor
+      const nc = sm < 0.2 ? 6 : sm < 0.35 ? 4 : 2;
+      const rot = Date.now() * 0.002;
+      ctx.globalAlpha = frostAlpha * 0.9;
+      for(let ic=0; ic<nc; ic++){
+        const a = rot + (ic/nc)*Math.PI*2;
+        const ix = pos.x + Math.cos(a)*r*1.28;
+        const iy = pos.y + Math.sin(a)*r*1.28;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(ix, iy, r*0.13, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#aaeeff';
+        ctx.font = `${Math.round(r*0.32)}px sans-serif`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('❄', ix, iy);
+      }
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
 
     // Barra de vida
     const bw = Math.max(r*2.8, 24);
