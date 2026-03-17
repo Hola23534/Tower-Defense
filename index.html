@@ -447,6 +447,15 @@ button:disabled{opacity:0.3;cursor:default;}
   </div>
 </div>
 
+<!-- LOGROS -->
+<div id="screen-achievements" class="screen">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:1.2rem;">
+    <button class="back-btn" id="btnBackLogros">&#8592; Volver</button>
+    <h2 style="color:#ffd700;font-size:1.3rem;font-weight:800;letter-spacing:.05em;">&#127942; Logros</h2>
+  </div>
+  <div class="ach-grid" id="ach-grid"></div>
+</div>
+
 <!-- JUEGO -->
 <div id="screen-game" class="screen">
   <div id="hud">
@@ -577,7 +586,7 @@ const DIFF_CONFIG = {
 let currentDiff = 'normal';
 
 function showScreen(id){
-  ['screen-menu','screen-difficulty','screen-explanation','screen-game'].forEach(s=>{
+  ['screen-menu','screen-difficulty','screen-explanation','screen-game','screen-achievements'].forEach(s=>{
     const el = document.getElementById(s);
     el.style.display = 'none';
     el.classList.remove('active');
