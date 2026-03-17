@@ -271,7 +271,7 @@ button:disabled{opacity:0.3;cursor:default;}
 .unit-section{display:flex;flex-direction:column;gap:3px;}
 .unit-section-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.38);padding:0 3px;}
 .unit-section-btns{display:flex;gap:6px;flex-wrap:wrap;}
-#section-otros{border-left:1px solid rgba(255,255,255,.1);padding-left:12px;}
+#section-otros{border-right:1px solid rgba(255,255,255,.1);padding-right:12px;}
 .tbtn{
   display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;
   border:1px solid rgba(255,255,255,.12);
@@ -485,6 +485,18 @@ button:disabled{opacity:0.3;cursor:default;}
     <div id="msg">Coloca torres y pulsa Iniciar oleada</div>
   </div>
   <div id="tower-select">
+    <div class="unit-section" id="section-otros">
+      <div class="unit-section-label">🔧 Otros</div>
+      <div class="unit-section-btns">
+        <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
+          <div class="tower-icon" style="background:#8B4513">💣</div>
+          <div class="tbtn-info">
+            <span class="tbtn-name">Bomba</span>
+            <span class="tbtn-stats">40💰 · 10 dmg · 3s · en camino</span>
+          </div>
+        </button>
+      </div>
+    </div>
     <div class="unit-section">
       <div class="unit-section-label">⚔️ Tropas</div>
       <div class="unit-section-btns">
@@ -528,18 +540,6 @@ button:disabled{opacity:0.3;cursor:default;}
           <div class="tbtn-info">
             <span class="tbtn-name">Élite</span>
             <span class="tbtn-stats">1000💰 · 4 dmg</span>
-          </div>
-        </button>
-      </div>
-    </div>
-    <div class="unit-section" id="section-otros">
-      <div class="unit-section-label">🔧 Otros</div>
-      <div class="unit-section-btns">
-        <button class="tbtn" data-type="bomb" title="Bomba: coloca en el camino, explota en 3s, 10 dmg en área">
-          <div class="tower-icon" style="background:#8B4513">💣</div>
-          <div class="tbtn-info">
-            <span class="tbtn-name">Bomba</span>
-            <span class="tbtn-stats">40💰 · 10 dmg · 3s · en camino</span>
           </div>
         </button>
       </div>
