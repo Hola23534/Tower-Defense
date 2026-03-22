@@ -669,6 +669,7 @@ document.querySelectorAll('.diff-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     currentDiff = btn.dataset.diff;
     showScreen('screen-game');
+    gameActive=true;
     resetGame();
   });
 });
@@ -1339,7 +1340,7 @@ function drawZombie(ctx, px, py, e, r){
 }
 
 function update(){
-  if(state.gameOver || state.victory) return;
+  if(!gameActive || state.gameOver || state.victory) return;
 
   // Spawn
   if(state.spawning){
@@ -1822,7 +1823,8 @@ function draw(){
   ctx.lineWidth=1;
 }
 
-let animId;
+let animId, gameActive=false;
+function stopAudio(){if(_audioCtx){try{_audioCtx.close();}catch(e){}}_audioCtx=null;}
 function loop(){ update(); draw(); animId=requestAnimationFrame(loop); }
 
 let _tmIdx = -1;
@@ -1961,7 +1963,7 @@ document.getElementById('sellBtn').addEventListener('click',()=>{
 });
 document.getElementById('resetBtn').addEventListener('click', resetGame);
 document.getElementById("soundBtn").addEventListener("click",function(){soundEnabled=!soundEnabled;var b=document.getElementById("soundBtn");b.textContent=soundEnabled?"SND:ON":"SND:OFF";b.classList.toggle("muted",!soundEnabled);});
-document.getElementById('menuBtn').addEventListener('click', ()=> showScreen('screen-menu'));
+document.getElementById('menuBtn').addEventListener('click', ()=>{ gameActive=false; stopAudio(); showScreen('screen-menu'); });
 
 // Estado inicial vacío — se llena al elegir dificultad
 let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0};
