@@ -1082,8 +1082,8 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.translate(tx, ty);
   ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
 
-  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : type==='jetpack' ? '#a07800' : type==='ice' ? '#2a9acc' : type==='explosive' ? '#8B0000' : '#5a4018';
-  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : type==='jetpack' ? '#e8c000' : type==='ice' ? '#7adcff' : type==='explosive' ? '#cc2222' : '#6b5020';
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : type==='jetpack' ? '#a07800' : type==='ice' ? '#2a9acc' : type==='explosive' ? '#cc0000' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : type==='jetpack' ? '#e8c000' : type==='ice' ? '#7adcff' : type==='explosive' ? '#ff4444' : '#6b5020';
 
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -2168,6 +2168,12 @@ function showTowerMenu(idx,cx,cy){
 }
 document.getElementById('tmenu-close').addEventListener('click',function(){
   document.getElementById('tower-menu').style.display='none';
+});
+// Cerrar menú al hacer clic fuera de él
+document.addEventListener('click',function(ev){
+  const menu=document.getElementById('tower-menu');
+  if(menu.style.display==='none') return;
+  if(!menu.contains(ev.target)) menu.style.display='none';
 });
 document.getElementById('tmenu-sell').addEventListener('click',function(){
   if(_tmIdx<0||_tmIdx>=state.towers.length) return;
