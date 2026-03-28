@@ -587,6 +587,20 @@ button:disabled{opacity:0.3;cursor:default;}
               <span class="tbtn-stats">150💰 · 🌐 T+A</span>
             </div>
           </button>
+          <button class="tbtn" data-type="healer" title="Curandero: restaura 1 vida cada 10s">
+            <div class="tower-icon" style="background:#cc4488;font-size:16px">➕</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Curandero</span>
+              <span class="tbtn-stats">150💰 · +vida</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="explosive" title="Explosivo: 5 dmg en área, disparo lento">
+            <div class="tower-icon" style="background:#8B0000">EX</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Explosivo</span>
+              <span class="tbtn-stats">400💰</span>
+            </div>
+          </button>
         </div>
       </div>
       <div class="unit-section">
@@ -620,6 +634,7 @@ button:disabled{opacity:0.3;cursor:default;}
     <div id="controls">
       <button id="startBtn">▶ Iniciar oleada</button>
       <button id="autoBtn">⏩ Automático: OFF</button>
+      <button id="speedBtn">⏩ ×1</button>
       <button id="sellBtn">💰 Vender torre</button>
       <div class="ctrl-sep"></div>
       <button id="soundBtn" title="Sonido">[SND]</button>
@@ -707,7 +722,7 @@ const CW = canvas.width / COLS, CH = canvas.height / ROWS;
 const MAX_LIVES = 20;
 const TOTAL_WAVES = 100;
 
-function generatePath(){
+function generatePath(minRow=1, maxRow=8){
   // Up to 30 attempts to get a valid, varied path
   for(let attempt=0; attempt<30; attempt++){
     const numTurns = 2 + Math.floor(Math.random()*6); // 2-7 turns
@@ -721,8 +736,8 @@ function generatePath(){
     }
     if(turnCols.length < 2) continue;
 
-    // Fully random start row (rows 1-8, leaving border for towers)
-    let row = 1 + Math.floor(Math.random()*8);
+    // Fully random start row within minRow-maxRow range
+    let row = minRow + Math.floor(Math.random()*(maxRow-minRow+1));
     const wps = [[0, row]];
 
     let ok = true;
@@ -730,7 +745,7 @@ function generatePath(){
       wps.push([tc, row]);
       // New row must differ by at least 2 from current
       let newRow, tries=0;
-      do { newRow = 1 + Math.floor(Math.random()*8); tries++; }
+      do { newRow = minRow + Math.floor(Math.random()*(maxRow-minRow+1)); tries++; }
       while(tries < 30 && Math.abs(newRow - row) < 2);
       if(Math.abs(newRow - row) < 2){ ok=false; break; }
       wps.push([tc, newRow]);
@@ -753,16 +768,30 @@ function generatePath(){
     }
     if(path.length >= 18) return path;
   }
-  // Fallback: classic zigzag
-  return [[0,2],[1,2],[2,2],[3,2],[3,3],[3,4],[3,5],
-    [4,5],[5,5],[6,5],[6,4],[6,3],[6,2],[7,2],
-    [8,2],[8,3],[8,4],[8,5],[8,6],[8,7],
-    [9,7],[10,7],[11,7],[11,6],[11,5],[11,4],
-    [12,4],[13,4]];
+  // Fallback: classic zigzag clamped to minRow range
+  const fbRow = minRow + Math.floor((maxRow-minRow)/2);
+  return [[0,fbRow],[1,fbRow],[2,fbRow],[3,fbRow],[3,fbRow+1],[3,Math.min(maxRow,fbRow+2)],[3,Math.min(maxRow,fbRow+3)],
+    [4,Math.min(maxRow,fbRow+3)],[5,Math.min(maxRow,fbRow+3)],[6,Math.min(maxRow,fbRow+3)],[6,Math.min(maxRow,fbRow+2)],[6,fbRow+1],[6,fbRow],[7,fbRow],
+    [8,fbRow],[8,fbRow+1],[8,Math.min(maxRow,fbRow+2)],[8,Math.min(maxRow,fbRow+3)],[8,Math.min(maxRow,fbRow+4)],[8,Math.min(maxRow,fbRow+5)],
+    [9,Math.min(maxRow,fbRow+5)],[10,Math.min(maxRow,fbRow+5)],[11,Math.min(maxRow,fbRow+5)],[11,Math.min(maxRow,fbRow+4)],[11,Math.min(maxRow,fbRow+3)],[11,Math.min(maxRow,fbRow+2)],
+    [12,Math.min(maxRow,fbRow+2)],[13,Math.min(maxRow,fbRow+2)]];
 }
 
-let PATH = generatePath();
-let PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
+function generatePaths(){
+  if(Math.random()<0.35){
+    const p1=generatePath(1,4);
+    const p2=generatePath(5,8);
+    if(p1&&p2){
+      const set1=new Set(p1.map(([c,r])=>c+','+r));
+      if(!p2.some(([c,r])=>set1.has(c+','+r))) return [p1,p2];
+    }
+  }
+  return [generatePath()];
+}
+
+let PATHS = generatePaths();
+let PATH = PATHS[0];
+let PATH_SET = new Set(PATHS.flatMap(p=>p.map(([c,r])=>c+','+r)));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
@@ -776,15 +805,37 @@ const TOWER_TYPES = {
   bomb:       {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10, cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
   spikes:     {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,  cost:25,   bullet:'#aaa',    label:'▲', targeting:'ground'},
   cannon:     {color:'#4a3a2a', rangeColor:'#886644', range:0,   fireRate:9999, dmg:6,  cost:80,   bullet:'#886644', label:'💥', targeting:'ground'},
+  explosive:  {color:'#8B0000', rangeColor:'#ff5500', range:2.8, fireRate:150, dmg:5, cost:400, bullet:'#ff6600', label:'EX', targeting:'both', aoe:true, aoeRadius:1.5},
+  healer:     {color:'#cc4488', rangeColor:'#ff88cc', range:0,   fireRate:9999, dmg:0, cost:150,  bullet:'#ff88cc', label:'+', targeting:'none'},
 };
 
+
+function generateDecorations(){
+  const decs=[];
+  const grassCells=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(!PATH_SET.has(c+','+r)) grassCells.push([c,r]);
+  }
+  const count=Math.floor(grassCells.length*0.12);
+  const shuffled=grassCells.sort(()=>Math.random()-0.5).slice(0,count);
+  shuffled.forEach(([c,r])=>{
+    const type=Math.random()<0.6?'flower':'stone';
+    const ox=(Math.random()-0.5)*CW*0.5;
+    const oy=(Math.random()-0.5)*CH*0.5;
+    const color=type==='flower'?['#ff88aa','#ffdd44','#ffffff','#ff66bb','#88ddff'][Math.floor(Math.random()*5)]:'#888888';
+    decs.push({c,r,type,ox,oy,color,size:type==='flower'?3+Math.random()*2:4+Math.random()*3});
+  });
+  return decs;
+}
 
 function resetGame(){
   const auto = state ? state.autoWave : false;
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
-  PATH = generatePath();
-  PATH_SET = new Set(PATH.map(([c,r])=>c+','+r));
-  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,waveAnim:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0};
+  PATHS = generatePaths();
+  PATH = PATHS[0];
+  PATH_SET = new Set(PATHS.flatMap(p=>p.map(([c,r])=>c+','+r)));
+  state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,waveAnim:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0,streakWaves:0,dmgByType:{},decorations:[],speed2x:false};
+  state.decorations = generateDecorations();
   document.getElementById('sellBtn').classList.remove('active');
   document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector('.tbtn[data-type="basic"]').classList.add('active');
@@ -809,21 +860,23 @@ function updateHUD(){
   });
 }
 
-function pathPos(t){
+function pathPos(t, pathId=0){
+  const path = (PATHS&&PATHS[pathId])||PATHS[0]||PATH;
   const idx = Math.floor(t);
-  if(idx >= PATH.length-1) return null;
+  if(idx >= path.length-1) return null;
   const f = t - idx;
-  const [c1,r1] = PATH[idx];
-  const [c2,r2] = PATH[idx+1];
+  const [c1,r1] = path[idx];
+  const [c2,r2] = path[idx+1];
   return {x:(c1+f*(c2-c1)+0.5)*CW, y:(r1+f*(r2-r1)+0.5)*CH};
 }
 
 function spawnEnemy(hp, speed, reward, kind){
   const k = kind||'normal';
   const ek = ENEMY_KINDS[k]||ENEMY_KINDS.normal;
+  const pathId = (PATHS&&PATHS.length>1) ? ((state._spawnIdx=(state._spawnIdx||0)+1)%2) : 0;
   state.enemies.push({t:0, hp, maxHp:hp, speed, reward, id:Math.random(), kind:k,
     shield: ek.hasShield ? true : false,
-    noHitTimer:0, hitFlash:0
+    noHitTimer:0, hitFlash:0, pathId, spawnAnim:15
   });
 }
 
@@ -1002,11 +1055,12 @@ function setMsg(t){ document.getElementById('msg').textContent = t; }
 function dist(ax,ay,bx,by){ return Math.sqrt((ax-bx)**2+(ay-by)**2); }
 
 // Ángulo de movimiento de un enemigo en su posición t del camino
-function enemyAngle(t){
+function enemyAngle(t, pathId=0){
+  const path = (PATHS&&PATHS[pathId])||PATHS[0]||PATH;
   const idx = Math.floor(t);
-  if(idx >= PATH.length-1) return 0;
-  const [c1,r1] = PATH[idx];
-  const [c2,r2] = PATH[Math.min(idx+1, PATH.length-1)];
+  if(idx >= path.length-1) return 0;
+  const [c1,r1] = path[idx];
+  const [c2,r2] = path[Math.min(idx+1, path.length-1)];
   return Math.atan2(r2-r1, c2-c1);
 }
 
@@ -1016,8 +1070,8 @@ function drawSoldier(ctx, tx, ty, type, angle, r){
   ctx.translate(tx, ty);
   ctx.rotate(angle + Math.PI/2); // modelo apunta "arriba" → rotamos para apuntar al objetivo
 
-  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : type==='jetpack' ? '#a07800' : type==='ice' ? '#2a9acc' : '#5a4018';
-  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : type==='jetpack' ? '#e8c000' : type==='ice' ? '#7adcff' : '#6b5020';
+  const vc = type==='basic' ? '#3d6b1e' : type==='fast' ? '#1a4a8a' : type==='elite' ? '#dde8f0' : type==='jetpack' ? '#a07800' : type==='ice' ? '#2a9acc' : type==='explosive' ? '#8B0000' : '#5a4018';
+  const hc = type==='basic' ? '#4a8224' : type==='fast' ? '#2060aa' : type==='elite' ? '#f0f8ff' : type==='jetpack' ? '#e8c000' : type==='ice' ? '#7adcff' : type==='explosive' ? '#cc2222' : '#6b5020';
 
   // Sombra
   ctx.fillStyle = 'rgba(0,0,0,0.28)';
@@ -1264,7 +1318,7 @@ function drawCannonObj(ctx, col, row, angle, showRange){
 // ── DIBUJO: Zombie top-down ──
 function drawZombie(ctx, px, py, e, r){
   const isBoss = e.kind==='boss';
-  const ma = enemyAngle(e.t);
+  const ma = enemyAngle(e.t, e.pathId||0);
   ctx.save();
   ctx.translate(px, py);
   ctx.rotate(ma + Math.PI/2); // zombie mira hacia donde se mueve
@@ -1421,20 +1475,22 @@ function update(){
   state.enemies.forEach(e=>{
     if(e.hitFlash>0) e.hitFlash--;
     if(e.recoil>0) e.recoil--;
+    if(e.spawnAnim>0) e.spawnAnim--;
     // Regen: se cura si lleva >90 frames sin recibir daño
     if(e.kind==='regen' && !e.dead){
       e.noHitTimer=(e.noHitTimer||0)+1;
       if(e.noHitTimer>90 && e.hp<e.maxHp) e.hp=Math.min(e.maxHp, e.hp+0.25);
     }
     let sm=1;
-    const ep=pathPos(e.t);
+    const ep=pathPos(e.t, e.pathId||0);
     if(ep) state.towers.forEach(t=>{
       if(t.type==='ice'){const tx=(t.col+0.5)*CW,ty=(t.row+0.5)*CH;const slowVal=[0.45,0.28,0.12][(t.level||1)-1];if(dist(tx,ty,ep.x,ep.y)<towerRange(t)*CW)sm=Math.min(sm,slowVal);}
     });
     e.frozen = sm < 1;
     e.slowMult = sm;
     e.t+=e.speed*sm;
-    if(e.t>=PATH.length-1){
+    const ePath = (PATHS&&PATHS[e.pathId||0])||PATHS[0]||PATH;
+    if(e.t>=ePath.length-1){
       e.dead=true;state.lives=Math.max(0,state.lives-1);
       if(state.lives<=0){state.gameOver=true;playSound('gameover');setMsg('Game over! Llegaste a la oleada '+state.wave);}
     }
@@ -1446,6 +1502,8 @@ function update(){
   // Torres disparan
   state.towers.forEach(t=>{
     const tp = TOWER_TYPES[t.type];
+    // ── Curandero: no dispara, restaura vida ──
+    if(t.type==='healer') return;
     // ── Cañón: lógica especial (dispara cada 7s independientemente) ──
     if(t.type==='cannon'){
       t.cannon_cd = (t.cannon_cd||0) + 1;
@@ -1453,7 +1511,7 @@ function update(){
       // Apuntar al enemigo más próximo
       let nearest=null, nearDist=Infinity;
       state.enemies.forEach(function(e){
-        var p=pathPos(e.t); if(!p)return;
+        var p=pathPos(e.t, e.pathId||0); if(!p)return;
         var d=dist(ctx2x,ctx2y,p.x,p.y);
         if(d<nearDist){nearDist=d;nearest=p;}
       });
@@ -1462,7 +1520,7 @@ function update(){
         t.cannon_cd=0;
         var spd=4.5;
         if(!state.cannonBullets)state.cannonBullets=[];
-        state.cannonBullets.push({x:ctx2x,y:ctx2y,vx:Math.cos(t.angle)*spd,vy:Math.sin(t.angle)*spd,dmg:6,hit:false});
+        state.cannonBullets.push({x:ctx2x,y:ctx2y,vx:Math.cos(t.angle)*spd,vy:Math.sin(t.angle)*spd,dmg:6,hit:false,src:'cannon'});
         playSound('shot_heavy');
       }
       return;
@@ -1477,19 +1535,30 @@ function update(){
       const ek = ENEMY_KINDS[e.kind] || ENEMY_KINDS.normal;
       if(tp.targeting === 'air' && !ek.flying) return;
       if(tp.targeting === 'ground' && ek.flying) return;
+      if(tp.targeting === 'none') return;
       if(ek.stealth && !tp.canTargetStealth) return; // sigiloso: solo élite/jetpack
-      const pos = pathPos(e.t);
+      const pos = pathPos(e.t, e.pathId||0);
       if(!pos) return;
       if(dist(tx,ty,pos.x,pos.y)<rangePx && e.t>bestT){ bestT=e.t; target=e; }
     });
     if(target){
-      const pos = pathPos(target.t);
+      const pos = pathPos(target.t, target.pathId||0);
       t.angle = Math.atan2(pos.y - ty, pos.x - tx);
       t.recoil = 5;
       const bdmg=towerDmg(t);
-      state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:bdmg,color:tp.bullet,speed:6});
+      state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:bdmg,color:tp.bullet,speed:6,src:t.type,aoe:tp.aoe||false,aoeRadius:tp.aoeRadius||0});
       if(t.type==='heavy')playSound('shot_heavy');else playSound('shot_basic');
       t.cd = tp.fireRate;
+    }
+  });
+
+  // Curandero: restaurar vida
+  state.towers.forEach(t=>{
+    if(t.type!=='healer') return;
+    t.healCd=(t.healCd||0)+1;
+    if(t.healCd>=600){
+      t.healCd=0;
+      if(state.lives<20){state.lives++;updateHUD();setMsg('❤️ Curandero restauró 1 vida');}
     }
   });
 
@@ -1498,7 +1567,7 @@ function update(){
     const e = state.enemies.find(e=>e.id===b.target);
     // Actualizar destino al enemigo en movimiento
     if(e && !e.dead){
-      const pos = pathPos(e.t);
+      const pos = pathPos(e.t, e.pathId||0);
       if(pos){ b.tx=pos.x; b.ty=pos.y; }
     }
     const dx=b.tx-b.x, dy=b.ty-b.y, d=Math.sqrt(dx*dx+dy*dy);
@@ -1508,9 +1577,31 @@ function update(){
       if(e && !e.dead){
         if(e.shield){ e.shield=false; e.hitFlash=8; } // blindado: absorbe primer golpe
         else {
+          const actualDmg=Math.min(e.hp,b.dmg);
           e.hp -= b.dmg; e.hitFlash=6; e.noHitTimer=0;
+          if(b.src) state.dmgByType[b.src]=(state.dmgByType[b.src]||0)+actualDmg;
           if(e.hp<=0){ e.dead=true; state.coins+=e.reward; state.totalKills=(state.totalKills||0)+1; playSound('death'); spawnDeathParticles(b.tx,b.ty,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color); }
         }
+      }
+      // AoE: explosivo — daño en área al impactar
+      if(b.aoe){
+        const impactX=b.tx, impactY=b.ty;
+        // Partículas de explosión
+        for(var _ai=0;_ai<20;_ai++){var _aa=((_ai)/20)*Math.PI*2,_as=2+Math.random()*4;state.particles.push({x:impactX,y:impactY,vx:Math.cos(_aa)*_as,vy:Math.sin(_aa)*_as,life:1,decay:0.03+Math.random()*0.025,r:3+Math.random()*4,color:Math.random()<0.5?'#ff6600':'#ff3300'});}
+        state.enemies.forEach(ae=>{
+          if(ae.dead||ae.id===b.target) return;
+          const ap=pathPos(ae.t, ae.pathId||0); if(!ap)return;
+          if(dist(impactX,impactY,ap.x,ap.y)<b.aoeRadius*CW){
+            if(ae.shield){ae.shield=false;ae.hitFlash=8;}
+            else{
+              const aoeDmg=Math.min(ae.hp,b.dmg);
+              ae.hp-=b.dmg;ae.hitFlash=6;ae.noHitTimer=0;
+              if(b.src) state.dmgByType[b.src]=(state.dmgByType[b.src]||0)+aoeDmg;
+              if(ae.hp<=0){ae.dead=true;state.coins+=ae.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(ap.x,ap.y,(ENEMY_KINDS[ae.kind]||ENEMY_KINDS.normal).color);}
+            }
+          }
+        });
+        playSound('explosion');
       }
       return;
     }
@@ -1524,7 +1615,7 @@ function update(){
       e.splitDone=true;
       for(var _si=0;_si<2;_si++){
         var mhp=Math.max(1,Math.ceil(e.maxHp*0.4));
-        state.enemies.push({t:Math.max(0,e.t-0.05), hp:mhp, maxHp:mhp, speed:e.speed*1.3, reward:1, id:Math.random(), kind:'mini', shield:false, noHitTimer:0, hitFlash:0});
+        state.enemies.push({t:Math.max(0,e.t-0.05), hp:mhp, maxHp:mhp, speed:e.speed*1.3, reward:1, id:Math.random(), kind:'mini', shield:false, noHitTimer:0, hitFlash:0, pathId:e.pathId||0, spawnAnim:15});
       }
     }
   });
@@ -1535,6 +1626,12 @@ function update(){
   if(state.waveRunning && !state.spawning && state.enemies.length===0 && state.spawnQueue.length===0){
     state.waveRunning = false;
     if(state.lives>=(state.livesAtWaveStart||state.lives))state.perfectWaves=(state.perfectWaves||0)+1;
+    // Racha bonus
+    if(state.lives >= (state.livesAtWaveStart||state.lives)){
+      state.streakWaves=(state.streakWaves||0)+1;
+    } else {
+      state.streakWaves=0;
+    }
     checkAch();
     if(state.wave >= TOTAL_WAVES && !(state.diff && state.diff.infiniteMode)){
       state.victory = true;
@@ -1544,8 +1641,14 @@ function update(){
       const bonusMult = (state.diff && state.diff.bonusMult) || 1;
       const bonus = Math.round((20 + state.wave * 3) * bonusMult);
       state.coins += bonus;
+      let waveMsg = 'Oleada '+state.wave+' completada! +'+bonus+' monedas';
+      if(state.streakWaves>=3){
+        const streakBonus=state.streakWaves*15;
+        state.coins+=streakBonus;
+        waveMsg += ' · Racha x'+state.streakWaves+' +'+streakBonus+'💰';
+      }
       const nextBoss = state.wave % 10 === 9 ? ' — Próxima: ¡JEFE!' : '';
-      setMsg('Oleada '+state.wave+' completada! +'+bonus+' monedas'+nextBoss);
+      setMsg(waveMsg+nextBoss);
       if(state.autoWave){
         state.autoTimer = 8; // casi instantáneo
       }
@@ -1584,13 +1687,13 @@ function update(){
     if(!s.inside)s.inside={};
     var sx=(s.col+0.5)*CW, sy=(s.row+0.5)*CH;
     state.enemies.forEach(function(e){
-      var p=pathPos(e.t);if(!p)return;
+      var p=pathPos(e.t, e.pathId||0);if(!p)return;
       var id=String(e.id);
       var inRange=dist(sx,sy,p.x,p.y)<CW*0.65;
       if(inRange && !s.inside[id]){
         s.inside[id]=true;
-        var _sdmg=Math.min(e.hp,1);e.hp-=1;e.hitFlash=6;e.noHitTimer=0;state.spikesDmgTotal=(state.spikesDmgTotal||0)+_sdmg;
-        if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');var _sp=pathPos(e.t);if(_sp)spawnDeathParticles(_sp.x,_sp.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}
+        var _sdmg=Math.min(e.hp,1);e.hp-=1;e.hitFlash=6;e.noHitTimer=0;state.spikesDmgTotal=(state.spikesDmgTotal||0)+_sdmg;state.dmgByType['spikes']=(state.dmgByType['spikes']||0)+_sdmg;
+        if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');var _sp=pathPos(e.t, e.pathId||0);if(_sp)spawnDeathParticles(_sp.x,_sp.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}
       } else if(!inRange){
         s.inside[id]=false;
       }
@@ -1606,11 +1709,11 @@ function update(){
     state.enemies.forEach(function(e){
       if(e.dead)return;
       if(b.hit_ids[e.id])return; // ya golpeó a este enemigo
-      var p=pathPos(e.t);if(!p)return;
+      var p=pathPos(e.t, e.pathId||0);if(!p)return;
       if(dist(b.x,b.y,p.x,p.y)<CW*0.45){
         b.hit_ids[e.id]=true;
         if(e.shield){e.shield=false;e.hitFlash=8;}
-        else{var _cdmg=Math.min(e.hp,b.dmg);e.hp-=b.dmg;e.hitFlash=6;e.noHitTimer=0;state.cannonDmgTotal=(state.cannonDmgTotal||0)+_cdmg;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}
+        else{var _cdmg=Math.min(e.hp,b.dmg);e.hp-=b.dmg;e.hitFlash=6;e.noHitTimer=0;state.cannonDmgTotal=(state.cannonDmgTotal||0)+_cdmg;state.dmgByType['cannon']=(state.dmgByType['cannon']||0)+_cdmg;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}
       }
     });
     // Eliminar solo al salir del canvas
@@ -1627,8 +1730,8 @@ function update(){
       var bx=(b.col+0.5)*CW,by=(b.row+0.5)*CH;
       playSound("explosion");
       state.enemies.forEach(function(e){
-        var p=pathPos(e.t);if(!p)return;
-        if(dist(bx,by,p.x,p.y)<CW*1.8){if(e.shield){e.shield=false;e.hitFlash=8;}else{var _bhp=Math.min(e.hp,10);e.hp-=10;e.hitFlash=6;e.noHitTimer=0;state.bombDmgTotal=(state.bombDmgTotal||0)+_bhp;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;state.bombKills=(state.bombKills||0)+1;spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}}
+        var p=pathPos(e.t, e.pathId||0);if(!p)return;
+        if(dist(bx,by,p.x,p.y)<CW*1.8){if(e.shield){e.shield=false;e.hitFlash=8;}else{var _bhp=Math.min(e.hp,10);e.hp-=10;e.hitFlash=6;e.noHitTimer=0;state.bombDmgTotal=(state.bombDmgTotal||0)+_bhp;state.dmgByType['bomb']=(state.dmgByType['bomb']||0)+_bhp;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;state.bombKills=(state.bombKills||0)+1;spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}}
       });
       for(var i=0;i<28;i++){var a=(i/28)*Math.PI*2,sp=2+Math.random()*4;state.particles.push({x:bx,y:by,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,decay:0.025+Math.random()*0.02,r:3+Math.random()*5,color:Math.random()<0.6?"#FF8C00":Math.random()<0.5?"#FF4500":"#FFD700"});}
       b.done=true;
@@ -1662,16 +1765,39 @@ function draw(){
     ctx.strokeRect(c*CW,r*CH,CW,CH);
   }
 
-  PATH.forEach(([c,r])=>{
-    ctx.fillStyle = pathColor;
-    ctx.fillRect(c*CW,r*CH,CW,CH);
+  PATHS.forEach(path=>{
+    path.forEach(([c,r])=>{
+      ctx.fillStyle = pathColor;
+      ctx.fillRect(c*CW,r*CH,CW,CH);
+    });
   });
 
   // Inicio (verde) y fin (rojo)
-  ctx.fillStyle = '#5DCAA5';
-  ctx.beginPath(); ctx.arc(PATH[0][0]*CW+CW/2, PATH[0][1]*CH+CH/2, CW*0.4,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#D85A30';
-  ctx.beginPath(); ctx.arc(PATH[PATH.length-1][0]*CW+CW/2, PATH[PATH.length-1][1]*CH+CH/2, CW*0.4,0,Math.PI*2); ctx.fill();
+  PATHS.forEach(path=>{
+    ctx.fillStyle='#5DCAA5';
+    ctx.beginPath();ctx.arc(path[0][0]*CW+CW/2,path[0][1]*CH+CH/2,CW*0.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#D85A30';
+    ctx.beginPath();ctx.arc(path[path.length-1][0]*CW+CW/2,path[path.length-1][1]*CH+CH/2,CW*0.4,0,Math.PI*2);ctx.fill();
+  });
+
+  // Decoraciones (flores y piedras)
+  if(state.decorations) state.decorations.forEach(d=>{
+    const dx=d.c*CW+CW/2+d.ox, dy=d.r*CH+CH/2+d.oy;
+    ctx.save();
+    ctx.globalAlpha=0.7;
+    if(d.type==='flower'){
+      ctx.fillStyle=d.color;
+      ctx.beginPath();ctx.arc(dx,dy,d.size,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ffff88';
+      ctx.beginPath();ctx.arc(dx,dy,d.size*0.4,0,Math.PI*2);ctx.fill();
+    } else {
+      ctx.fillStyle=d.color;
+      ctx.beginPath();ctx.ellipse(dx,dy,d.size,d.size*0.7,0,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='rgba(255,255,255,0.2)';
+      ctx.beginPath();ctx.ellipse(dx-d.size*0.25,dy-d.size*0.2,d.size*0.35,d.size*0.25,0,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  });
 
   // Torres — soldados militares top-down
   state.towers.forEach(t=>{
@@ -1698,6 +1824,23 @@ function draw(){
       ctx.strokeStyle='rgba(255,200,50,0.75)'; ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.arc(tx,ty,CW*0.44,-Math.PI/2,-Math.PI/2+cprog*Math.PI*2); ctx.stroke();
       ctx.restore();
+    }
+    else if(t.type==='healer'){
+      const pulse=Math.sin(Date.now()*0.003)*0.1+0.9;
+      ctx.save();
+      ctx.translate(tx,ty);
+      ctx.scale(pulse,pulse);
+      ctx.fillStyle='#cc4488';
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='rgba(255,136,204,0.7)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(-r*0.12,-r*0.58,r*0.24,r*1.16);
+      ctx.fillRect(-r*0.58,-r*0.12,r*1.16,r*0.24);
+      ctx.restore();
+    }
+    else if(t.type==='explosive'){
+      drawSoldier(ctx, tx+rcX, ty+rcY, 'explosive', t.angle ?? -Math.PI/2, r);
     }
     else drawSoldier(ctx, tx+rcX, ty+rcY, t.type, t.angle ?? -Math.PI/2, r);
     {var lv=t.level||1;if(lv>1){ctx.fillStyle=lv===3?"#FFD700":"#88ccff";ctx.font="bold "+Math.round(CW*0.22)+"px sans-serif";ctx.textAlign="right";ctx.textBaseline="top";ctx.fillText(lv===3?"+2":"+1",tx+r*0.85,ty-r*0.85);}}
@@ -1788,12 +1931,21 @@ function draw(){
 
   // Enemigos
   state.enemies.forEach(e=>{
-    const pos = pathPos(e.t);
+    const pos = pathPos(e.t, e.pathId||0);
     if(!pos) return;
 
     const k = ENEMY_KINDS[e.kind] || ENEMY_KINDS.normal;
     const isBoss = e.kind === 'boss';
     const r = CW * k.radius;
+
+    ctx.save();
+    if(e.spawnAnim>0){
+      const sc=1-e.spawnAnim/15;
+      ctx.globalAlpha=sc;
+      ctx.translate(pos.x,pos.y);
+      ctx.scale(sc,sc);
+      ctx.translate(-pos.x,-pos.y);
+    }
 
     drawZombie(ctx, pos.x, pos.y, e, r);
 
@@ -1820,14 +1972,11 @@ function draw(){
     // Efecto de congelación
     if(e.frozen){
       const sm = e.slowMult ?? 0.45;
-      // Más lento → más opaco (0.45→0.25 alpha, 0.12→0.58 alpha)
       const frostAlpha = 0.18 + (1 - sm) * 0.55;
       ctx.save();
-      // Tinte azul helado sobre el cuerpo
       ctx.globalAlpha = frostAlpha;
       ctx.fillStyle = '#88ddff';
       ctx.beginPath(); ctx.arc(pos.x, pos.y, r*1.08, 0, Math.PI*2); ctx.fill();
-      // Cristales de hielo girando alrededor
       const nc = sm < 0.2 ? 6 : sm < 0.35 ? 4 : 2;
       const rot = Date.now() * 0.002;
       ctx.globalAlpha = frostAlpha * 0.9;
@@ -1867,6 +2016,8 @@ function draw(){
     ctx.font = `${Math.round(CW*(isBoss?0.24:0.18))}px var(--font-sans)`;
     ctx.textAlign='center'; ctx.textBaseline='bottom';
     ctx.fillText(hpDisplay, pos.x, by - 2);
+
+    ctx.restore();
   });
 
   // Balas
@@ -1915,17 +2066,29 @@ function draw(){
     ctx.restore();
   }
 
-  // Pantalla final
+  // Pantalla final con estadísticas
   if(state.gameOver || state.victory){
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillStyle='rgba(0,0,0,0.72)';
     ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = '#fff';
-    ctx.font = `500 ${Math.round(CW*1.2)}px var(--font-sans)`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(state.victory ? '¡Victoria!' : 'Game Over', canvas.width/2, canvas.height/2 - 12);
-    ctx.font = `${Math.round(CW*0.55)}px var(--font-sans)`;
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.fillText('Oleada ' + state.wave, canvas.width/2, canvas.height/2 + 22);
+    const cx2=canvas.width/2, cy2=canvas.height/2;
+    ctx.textAlign='center';
+    ctx.fillStyle=state.victory?'#ffd700':'#ff6666';
+    ctx.font=`bold ${Math.round(CW*1.0)}px var(--font-sans)`;
+    ctx.fillText(state.victory?'¡Victoria!':'Game Over', cx2, cy2-80);
+    ctx.font=`${Math.round(CW*0.5)}px var(--font-sans)`;
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    ctx.fillText('Oleada '+state.wave+' · '+state.totalKills+' enemigos eliminados', cx2, cy2-50);
+    const dmgEntries=Object.entries(state.dmgByType||{}).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    ctx.font=`${Math.round(CW*0.42)}px var(--font-sans)`;
+    ctx.fillStyle='rgba(200,200,255,0.9)';
+    ctx.fillText('Mayor daño causado:', cx2, cy2-20);
+    dmgEntries.forEach(([src,dmg],i)=>{
+      ctx.fillStyle='rgba(255,220,100,0.9)';
+      ctx.fillText(`${src}: ${Math.round(dmg)} dmg`, cx2, cy2+8+i*22);
+    });
+    ctx.fillStyle='rgba(255,255,255,0.5)';
+    ctx.font=`${Math.round(CW*0.38)}px var(--font-sans)`;
+    ctx.fillText('Pulsa Reiniciar o vuelve al menú', cx2, cy2+110);
   }
 
   // Banner de oleada
@@ -1953,16 +2116,16 @@ function draw(){
 
 let animId, gameActive=false;
 function stopAudio(){if(_audioCtx){try{_audioCtx.close();}catch(e){}}_audioCtx=null;}
-function loop(){ update(); draw(); animId=requestAnimationFrame(loop); }
+function loop(){ update(); if(state.speed2x) update(); draw(); animId=requestAnimationFrame(loop); }
 
 let _tmIdx = -1;
 function showTowerMenu(idx,cx,cy){
   _tmIdx=idx;
   var t=state.towers[idx],tp=TOWER_TYPES[t.type];
-  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador",helicopter:"Helicoptero"};
+  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador",helicopter:"Helicoptero",explosive:"Explosivo",healer:"Curandero"};
   var menu=document.getElementById("tower-menu");
   document.getElementById("tmenu-name").textContent=(names[t.type]||t.type)+" (Nv."+(t.level||1)+")";
-  document.getElementById("tmenu-target").textContent=tp.slowTower?"Retrocede TERRESTRE y AEREO":tp.targeting==="both"?"Ataca TERRESTRE y AEREO":tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
+  document.getElementById("tmenu-target").textContent=tp.targeting==="none"?"No ataca — restaura vidas":tp.slowTower?"Retrocede TERRESTRE y AEREO":tp.targeting==="both"?(tp.aoe?"Ataca TERRESTRE y AEREO (AoE)":"Ataca TERRESTRE y AEREO"):tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
   var slowPcts=[45,28,12];
   document.getElementById("tmenu-stats").textContent="Dano: "+towerDmg(t).toFixed(1)+"\n"+(tp.slowTower?"Retroceso: "+slowPcts[(t.level||1)-1]+"% velocidad\n":"")+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3";
   var upBtn=document.getElementById("tmenu-upgrade");
@@ -2084,6 +2247,11 @@ document.getElementById('autoBtn').addEventListener('click',()=>{
   btn.textContent = 'Automatico: ' + (state.autoWave ? 'ON' : 'OFF');
   btn.classList.toggle('active', state.autoWave);
 });
+document.getElementById('speedBtn').addEventListener('click',()=>{
+  state.speed2x=!state.speed2x;
+  document.getElementById('speedBtn').textContent=state.speed2x?'⏩ ×2':'⏩ ×1';
+  document.getElementById('speedBtn').classList.toggle('active',state.speed2x);
+});
 document.getElementById('sellBtn').addEventListener('click',()=>{
   state.sellMode=!state.sellMode;
   document.getElementById('sellBtn').classList.toggle('active',state.sellMode);
@@ -2094,6 +2262,6 @@ document.getElementById("soundBtn").addEventListener("click",function(){soundEna
 document.getElementById('menuBtn').addEventListener('click', ()=>{ gameActive=false; stopAudio(); showScreen('screen-menu'); });
 
 // Estado inicial vacío — se llena al elegir dificultad
-let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0};
+let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0,streakWaves:0,dmgByType:{},decorations:[],speed2x:false};
 loop();
 </script>
