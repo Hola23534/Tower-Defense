@@ -2197,7 +2197,7 @@ canvas.addEventListener('click', e=>{
 
   if(!state.sellMode){
     const ti=state.towers.findIndex(t=>t.col===col&&t.row===row);
-    if(ti>=0){ showTowerMenu(ti,e.clientX,e.clientY); return; }
+    if(ti>=0){ showTowerMenu(ti,e.clientX,e.clientY); e.stopPropagation(); return; }
   }
 
   if(state.sellMode){
