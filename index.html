@@ -959,7 +959,7 @@ function updateHUD(){
   document.getElementById('lives').textContent = state.lives;
   document.getElementById('coins').textContent = state.coins;
   const isInf = state.diff && state.diff.infiniteMode;
-  document.getElementById('wave').textContent = state.wave + ' / ' + (isInf ? 'âˆž' : TOTAL_WAVES);
+  document.getElementById('wave').textContent = state.wave + ' / ' + (isInf ? '\u221E' : TOTAL_WAVES);
   state.maxCoins=Math.max(state.maxCoins||0,state.coins);
   document.getElementById('ecount').textContent = state.enemies.length + state.spawnQueue.length;
   document.getElementById('startBtn').disabled = state.waveRunning || state.gameOver || state.victory;
