@@ -306,7 +306,7 @@ button:disabled{opacity:0.3;cursor:default;}
   <div class="menu-hero">
     <div class="menu-hero-icon">🗼</div>
     <div class="menu-hero-title">TOWER DEFENSE</div>
-    <div class="menu-hero-sub">100 oleadas · 4 tipos de enemigos · 3 dificultades</div>
+    <div class="menu-hero-sub">100 oleadas · +11 tipos de enemigos · 4 dificultades</div>
   </div>
 
   <!-- Mini preview decorativa del mapa -->
@@ -447,6 +447,18 @@ button:disabled{opacity:0.3;cursor:default;}
     <div class="expl-row">
       <div class="expl-dot" style="background:#cc4488;font-size:16px">➕</div>
       <div><b>Curandero</b> — 150💰 · no ataca · <b>restaura 1 vida cada 10 segundos</b> si no tienes el máximo</div>
+    </div>
+  </div>
+
+  <div class="expl-card">
+    <div class="expl-card-title">⚗️ Torres Combo</div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#1a6a9a;font-size:13px">❄C</div>
+      <div><b>Cryo Cañón</b> — 280💰 · 3 dmg · balas <b>penetrantes</b> que atraviesan todos los enemigos y los <b>ralentizan</b> al 45% <span class="tag-air">🌐 Tierra+Aire</span></div>
+    </div>
+    <div class="expl-row">
+      <div class="expl-dot" style="background:#6a2a8a;font-size:13px">BD</div>
+      <div><b>Bomber Drone</b> — 450💰 · 7 dmg · disparo de <b>área</b> (radio 1.8 celdas) que <b>ralentiza</b> a todos los enemigos en el radio de explosión <span class="tag-air">🌐 Tierra+Aire</span></div>
     </div>
   </div>
 
@@ -1052,6 +1064,13 @@ var ACHIEVEMENTS=[
   {id:'place_bomb5',name:'Minador',desc:'Coloca 5 bombas',icon:'💣×5',check:function(s){return (s.placed_bomb||0)>=5;}},
   {id:'place_spikes10',name:'Campo de Pinchos',desc:'Coloca 10 pinchos',icon:'▲×10',check:function(s){return (s.placed_spikes||0)>=10;}},
   {id:'place_cannon5',name:'Batería',desc:'Coloca 5 cañones',icon:'⚙×5',check:function(s){return (s.placed_cannon||0)>=5;}},
+  // Torres combo
+  {id:'place_cryo3',name:'Glacial',desc:'Coloca el Cryo Cañón 3 veces',icon:'❄×3',check:function(s){return (s.placed_cryocannon||0)>=3;}},
+  {id:'place_bomber3',name:'Escuadrón Drone',desc:'Coloca el Bomber Drone 3 veces',icon:'BD×3',check:function(s){return (s.placed_bomberdrone||0)>=3;}},
+  {id:'max_cryocannon',name:'Ártico',desc:'Sube un Cryo Cañón al nivel máximo',icon:'★❄',check:function(s){return !!s.maxed_cryocannon;}},
+  {id:'max_bomberdrone',name:'Drone Supremo',desc:'Sube un Bomber Drone al nivel máximo',icon:'★BD',check:function(s){return !!s.maxed_bomberdrone;}},
+  {id:'cryo_dmg1000',name:'Tormenta de Hielo',desc:'Causa 1000 de daño con el Cryo Cañón',icon:'❄💥',check:function(s){return (s.dmgByType&&s.dmgByType['cryocannon']||0)>=1000;}},
+  {id:'bomber_dmg1000',name:'Lluvia de Bombas',desc:'Causa 1000 de daño con el Bomber Drone',icon:'BD💥',check:function(s){return (s.dmgByType&&s.dmgByType['bomberdrone']||0)>=1000;}},
 ];
 function loadAch(){try{return JSON.parse(localStorage.getItem('td_ach')||'{}');}catch(e){return {};}}
 function saveAch(o){try{localStorage.setItem('td_ach',JSON.stringify(o));}catch(e){}}
