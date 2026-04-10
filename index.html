@@ -322,6 +322,9 @@ button:disabled{opacity:0.3;cursor:default;}
   <div class="menu-footer">v1.0 · Hecho con ❤️</div>
 </div>
 
+<!-- STATS SCREEN (end game overlay) -->
+<div id="screen-stats" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;background:rgba(0,0,0,0.85);color:#fff;flex-direction:column;align-items:center;justify-content:center;overflow-y:auto;"></div>
+
 <!-- SELECCIÓN DE DIFICULTAD -->
 <div id="screen-difficulty">
   <div class="screen-header">
@@ -385,6 +388,17 @@ button:disabled{opacity:0.3;cursor:default;}
         </div>
       </div>
     </button>
+  </div>
+
+  <!-- MAP SELECTOR -->
+  <div style="margin-top:18px;">
+    <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">🗺️ Mapa</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="map-btn active" data-map="random" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);color:#fff;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;">🎲 Aleatorio</button>
+      <button class="map-btn" data-map="zigzag" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;">〰️ Zigzag</button>
+      <button class="map-btn" data-map="twolane" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;">⇈ Doble Carril</button>
+      <button class="map-btn" data-map="spiral" style="padding:8px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:rgba(255,255,255,.75);cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;">🌀 Espiral</button>
+    </div>
   </div>
 </div>
 
@@ -613,6 +627,20 @@ button:disabled{opacity:0.3;cursor:default;}
               <span class="tbtn-stats">400💰</span>
             </div>
           </button>
+          <button class="tbtn" data-type="cryocannon" title="Cañón Cryo: 3 dmg, penetrante, ralentiza">
+            <div class="tower-icon" style="background:#1a6a9a">❄C</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Cryo Cañón</span>
+              <span class="tbtn-stats">280💰 · ❄️ lento</span>
+            </div>
+          </button>
+          <button class="tbtn" data-type="bomberdrone" title="Bomba Drone: 7 dmg AoE, ralentiza en área">
+            <div class="tower-icon" style="background:#6a2a8a">BD</div>
+            <div class="tbtn-info">
+              <span class="tbtn-name">Bomber Drone</span>
+              <span class="tbtn-stats">450💰 · 💥 AoE</span>
+            </div>
+          </button>
         </div>
       </div>
       <div class="unit-section">
@@ -688,6 +716,55 @@ button:disabled{opacity:0.3;cursor:default;}
     });
   });
 })();
+
+// ── PRESET MAPS ──
+const PRESET_MAPS = {
+  random: null, // uses generatePaths()
+  zigzag: [[
+    [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
+    [6,2],[6,3],[6,4],[6,5],[6,6],[6,7],[6,8],
+    [7,8],[8,8],[9,8],[10,8],
+    [10,7],[10,6],[10,5],[10,4],[10,3],[10,2],[10,1],
+    [11,1],[12,1],[13,1]
+  ]],
+  twolane: [
+    [
+      [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2],
+      [6,3],[6,4],
+      [7,4],[8,4],[9,4],[10,4],[11,4],[12,4],[13,4]
+    ],
+    [
+      [0,7],[1,7],[2,7],[3,7],[4,7],[5,7],[6,7],
+      [6,6],[6,5],
+      [7,5],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5]
+    ]
+  ],
+  spiral: (function(){
+    // Clean snake/coil path — no overlaps, starts col 0, ends col 13
+    var p = [];
+    // Row 1: left to right col 0..12
+    for(var c=0;c<=12;c++) p.push([c,1]);
+    // Col 12: down row 2..3
+    p.push([12,2]); p.push([12,3]);
+    // Row 3: right to left col 11..1
+    for(var c=11;c>=1;c--) p.push([c,3]);
+    // Col 1: down row 4..5
+    p.push([1,4]); p.push([1,5]);
+    // Row 5: left to right col 2..12
+    for(var c=2;c<=12;c++) p.push([c,5]);
+    // Col 12: down row 6..7
+    p.push([12,6]); p.push([12,7]);
+    // Row 7: right to left col 11..1
+    for(var c=11;c>=1;c--) p.push([c,7]);
+    // Col 1: down row 8..9
+    p.push([1,8]); p.push([1,9]);
+    // Row 9: left to right col 2..13 (exit)
+    for(var c=2;c<=13;c++) p.push([c,9]);
+    return [p];
+  })()
+};
+
+let currentMap = 'random';
 
 // ── SCREEN NAVIGATION ──
 const DIFF_CONFIG = {
@@ -807,19 +884,23 @@ let PATH_SET = new Set(PATHS.flatMap(p=>p.map(([c,r])=>c+','+r)));
 
 // Daño rebalanceado: básica 1, rápida 0.7 (más veloz), pesada 3 (más lenta)
 const TOWER_TYPES = {
-  basic:   {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B', targeting:'ground'},
-  fast:    {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R', targeting:'ground'},
-  heavy:   {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P', targeting:'ground'},
-  elite:      {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E', targeting:'both', canTargetStealth:true},
-  jetpack:    {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V', targeting:'air',  canTargetStealth:true},
-  ice:        {color:'#4ab8e8', rangeColor:'#aaeeff', range:2.2, fireRate:55,   dmg:1,  cost:90,   bullet:'#aaeeff', label:'H', targeting:'both', slowTower:true},
-  helicopter: {color:'#2a7a4a', rangeColor:'#5acc88', range:2.8, fireRate:30, dmg:0.7, cost:150,  bullet:'#5acc88', label:'🚁', targeting:'both'},
-  bomb:       {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10, cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
-  spikes:     {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,  cost:25,   bullet:'#aaa',    label:'▲', targeting:'ground'},
-  cannon:     {color:'#4a3a2a', rangeColor:'#886644', range:0,   fireRate:9999, dmg:6,  cost:80,   bullet:'#886644', label:'💥', targeting:'ground'},
-  explosive:  {color:'#8B0000', rangeColor:'#ff5500', range:2.8, fireRate:150, dmg:5, cost:400, bullet:'#ff6600', label:'EX', targeting:'both', aoe:true, aoeRadius:1.5},
-  healer:     {color:'#cc4488', rangeColor:'#ff88cc', range:0,   fireRate:9999, dmg:0, cost:150,  bullet:'#ff88cc', label:'+', targeting:'none'},
+  basic:       {color:'#185FA5', rangeColor:'#378ADD', range:2.5, fireRate:60,  dmg:1,   cost:50,   bullet:'#378ADD', label:'B',  targeting:'ground'},
+  fast:        {color:'#1a5fa0', rangeColor:'#5aaaf0', range:2.0, fireRate:28,  dmg:0.7, cost:80,   bullet:'#5aaaf0', label:'R',  targeting:'ground'},
+  heavy:       {color:'#712B13', rangeColor:'#D85A30', range:3.2, fireRate:130, dmg:3,   cost:120,  bullet:'#D85A30', label:'P',  targeting:'ground'},
+  elite:       {color:'#e8e8e8', rangeColor:'#c8a000', range:3.0, fireRate:60,  dmg:4,   cost:1000, bullet:'#ffffff', label:'E',  targeting:'both', canTargetStealth:true},
+  jetpack:     {color:'#c8a000', rangeColor:'#f0d060', range:2.8, fireRate:65,  dmg:1.8, cost:200,  bullet:'#f0d060', label:'V',  targeting:'air',  canTargetStealth:true},
+  ice:         {color:'#4ab8e8', rangeColor:'#aaeeff', range:2.2, fireRate:55,  dmg:1,   cost:90,   bullet:'#aaeeff', label:'H',  targeting:'both', slowTower:true},
+  helicopter:  {color:'#2a7a4a', rangeColor:'#5acc88', range:2.8, fireRate:30,  dmg:0.7, cost:150,  bullet:'#5acc88', label:'🚁', targeting:'both'},
+  bomb:        {color:'#8B4513', rangeColor:'#cc6622', range:0,   fireRate:9999, dmg:10,  cost:40,   bullet:'#cc6622', label:'💣', targeting:'ground'},
+  spikes:      {color:'#888888', rangeColor:'#aaaaaa', range:0,   fireRate:9999, dmg:1,   cost:25,   bullet:'#aaa',    label:'▲',  targeting:'ground'},
+  cannon:      {color:'#4a3a2a', rangeColor:'#886644', range:0,   fireRate:9999, dmg:6,   cost:80,   bullet:'#886644', label:'💥', targeting:'ground'},
+  explosive:   {color:'#8B0000', rangeColor:'#ff5500', range:2.8, fireRate:150, dmg:5,   cost:400,  bullet:'#ff6600', label:'EX', targeting:'both', aoe:true, aoeRadius:1.5},
+  healer:      {color:'#cc4488', rangeColor:'#ff88cc', range:0,   fireRate:9999, dmg:0,   cost:150,  bullet:'#ff88cc', label:'+',  targeting:'none'},
+  cryocannon:  {color:'#1a6a9a', rangeColor:'#55aadd', range:2.8, fireRate:110, dmg:3,   cost:280,  bullet:'#88ddff', label:'❄C', targeting:'both', penetrating:true, cryo:true},
+  bomberdrone: {color:'#6a2a8a', rangeColor:'#aa66cc', range:3.0, fireRate:200, dmg:7,   cost:450,  bullet:'#cc88ff', label:'BD', targeting:'both', aoe:true, aoeRadius:1.8, slowOnHit:true},
 };
+
+let towerIdCounter = 0;
 
 
 function generateDecorations(){
@@ -843,9 +924,17 @@ function generateDecorations(){
 function resetGame(){
   const auto = state ? state.autoWave : false;
   const cfg = DIFF_CONFIG[currentDiff] || DIFF_CONFIG.normal;
-  PATHS = generatePaths();
+  // Select map based on currentMap
+  if(currentMap === 'random' || !PRESET_MAPS[currentMap]) {
+    PATHS = generatePaths();
+  } else {
+    PATHS = PRESET_MAPS[currentMap].map(p => p.slice());
+  }
   PATH = PATHS[0];
   PATH_SET = new Set(PATHS.flatMap(p=>p.map(([c,r])=>c+','+r)));
+  // Hide stats screen
+  const statsEl = document.getElementById('screen-stats');
+  if(statsEl) statsEl.style.display = 'none';
   state = {lives:20,coins:cfg.coins,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:auto,diff:cfg,introTimer:182,waveAnim:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0,streakWaves:0,dmgByType:{},decorations:[],speed2x:false};
   state.decorations = generateDecorations();
   document.getElementById('sellBtn').classList.remove('active');
@@ -1466,6 +1555,77 @@ function spawnDeathParticles(x,y,color){
   }
 }
 
+// ── TARGETING MODE HELPER ──
+function pickTarget(tower, inRangeEnemies){
+  if(inRangeEnemies.length === 0) return null;
+  const mode = tower.targetMode || 'first';
+  if(mode === 'first'){
+    return inRangeEnemies.reduce((best,e) => e.t > best.t ? e : best);
+  } else if(mode === 'last'){
+    return inRangeEnemies.reduce((best,e) => e.t < best.t ? e : best);
+  } else if(mode === 'mosthp'){
+    return inRangeEnemies.reduce((best,e) => e.hp > best.hp ? e : best);
+  } else if(mode === 'fastest'){
+    return inRangeEnemies.reduce((best,e) => e.speed > best.speed ? e : best);
+  } else if(mode === 'closest'){
+    const tx=(tower.col+0.5)*CW, ty=(tower.row+0.5)*CH;
+    return inRangeEnemies.reduce((best,e) => {
+      const p = pathPos(e.t, e.pathId||0);
+      const pb = pathPos(best.t, best.pathId||0);
+      if(!p) return best; if(!pb) return e;
+      return dist(tx,ty,p.x,p.y) < dist(tx,ty,pb.x,pb.y) ? e : best;
+    });
+  }
+  return inRangeEnemies[0];
+}
+
+// ── STATS SCREEN ──
+function showStatsScreen(){
+  const el = document.getElementById('screen-stats');
+  if(!el) return;
+  const isVictory = state.victory;
+  const dmgEntries = Object.entries(state.dmgByType||{}).sort((a,b)=>b[1]-a[1]);
+  let dmgRows = dmgEntries.map(([src,dmg])=>
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;">
+      <span style="color:#aaddff;">${src}</span>
+      <span style="color:#ffd700;font-weight:700;">${Math.round(dmg)} dmg</span>
+    </div>`
+  ).join('');
+  if(!dmgRows) dmgRows = '<div style="color:rgba(255,255,255,.4);font-size:13px;">Sin datos</div>';
+  el.innerHTML = `
+    <div style="max-width:460px;width:90%;padding:32px 28px;background:rgba(10,18,40,0.97);border:1px solid rgba(255,255,255,.18);border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.7);">
+      <div style="font-size:38px;font-weight:900;text-align:center;color:${isVictory?'#ffd700':'#ff6666'};text-shadow:0 0 30px ${isVictory?'rgba(255,215,0,.6)':'rgba(255,80,80,.6)'};margin-bottom:8px;">${isVictory?'¡VICTORIA!':'GAME OVER'}</div>
+      <div style="text-align:center;font-size:14px;color:rgba(255,255,255,.55);margin-bottom:24px;letter-spacing:.5px;">${isVictory?'Completaste todas las oleadas':'Los enemigos llegaron al final'}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+        <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:6px;">Oleada</div>
+          <div style="font-size:28px;font-weight:800;color:#fff;">${state.wave}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:6px;">Kills</div>
+          <div style="font-size:28px;font-weight:800;color:#fff;">${state.totalKills||0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:6px;">Torres</div>
+          <div style="font-size:28px;font-weight:800;color:#fff;">${state.totalTowersPlaced||0}</div>
+        </div>
+        <div style="background:rgba(255,255,255,.07);border-radius:12px;padding:14px;text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:6px;">Oleadas Perfectas</div>
+          <div style="font-size:28px;font-weight:800;color:#fff;">${state.perfectWaves||0}</div>
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,.05);border-radius:12px;padding:16px;margin-bottom:24px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.45);margin-bottom:12px;">Daño por tipo de torre</div>
+        ${dmgRows}
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="resetGame();document.getElementById('screen-stats').style.display='none';" style="flex:1;padding:13px;font-size:14px;font-weight:700;border-radius:10px;background:linear-gradient(135deg,#1a8c52,#22a862);border:1px solid rgba(255,255,255,.25);color:#fff;cursor:pointer;">▶ Jugar de Nuevo</button>
+        <button onclick="showScreen('screen-menu');document.getElementById('screen-stats').style.display='none';" style="flex:1;padding:13px;font-size:14px;font-weight:600;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.85);cursor:pointer;">← Menú Principal</button>
+      </div>
+    </div>`;
+  el.style.display = 'flex';
+}
+
 function update(){
   if(!gameActive || state.gameOver || state.victory) return;
 
@@ -1498,13 +1658,14 @@ function update(){
     if(ep) state.towers.forEach(t=>{
       if(t.type==='ice'){const tx=(t.col+0.5)*CW,ty=(t.row+0.5)*CH;const slowVal=[0.45,0.28,0.12][(t.level||1)-1];if(dist(tx,ty,ep.x,ep.y)<towerRange(t)*CW)sm=Math.min(sm,slowVal);}
     });
+    if(e._cryo>0){ e._cryo--; sm=Math.min(sm,0.45); }
     e.frozen = sm < 1;
     e.slowMult = sm;
     e.t+=e.speed*sm;
     const ePath = (PATHS&&PATHS[e.pathId||0])||PATHS[0]||PATH;
     if(e.t>=ePath.length-1){
       e.dead=true;state.lives=Math.max(0,state.lives-1);
-      if(state.lives<=0){state.gameOver=true;playSound('gameover');setMsg('Game over! Llegaste a la oleada '+state.wave);}
+      if(state.lives<=0){state.gameOver=true;playSound('gameover');setMsg('Game over! Llegaste a la oleada '+state.wave);setTimeout(showStatsScreen,800);}
     }
   });
 
@@ -1532,7 +1693,7 @@ function update(){
         t.cannon_cd=0;
         var spd=4.5;
         if(!state.cannonBullets)state.cannonBullets=[];
-        state.cannonBullets.push({x:ctx2x,y:ctx2y,vx:Math.cos(t.angle)*spd,vy:Math.sin(t.angle)*spd,dmg:6,hit:false,src:'cannon'});
+        state.cannonBullets.push({x:ctx2x,y:ctx2y,vx:Math.cos(t.angle)*spd,vy:Math.sin(t.angle)*spd,dmg:6,hit:false,src:'cannon',towerId:t.id});
         playSound('shot_heavy');
       }
       return;
@@ -1541,24 +1702,25 @@ function update(){
     if(t.cd > 0) return;
     const rangePx = towerRange(t) * CW;
     const tx=(t.col+0.5)*CW, ty=(t.row+0.5)*CH;
-    let target=null, bestT=-Infinity;
+    const inRangeEnemies = [];
     state.enemies.forEach(e=>{
       if(e.dead) return;
       const ek = ENEMY_KINDS[e.kind] || ENEMY_KINDS.normal;
       if(tp.targeting === 'air' && !ek.flying) return;
       if(tp.targeting === 'ground' && ek.flying) return;
       if(tp.targeting === 'none') return;
-      if(ek.stealth && !tp.canTargetStealth) return; // sigiloso: solo élite/jetpack
+      if(ek.stealth && !tp.canTargetStealth) return;
       const pos = pathPos(e.t, e.pathId||0);
       if(!pos) return;
-      if(dist(tx,ty,pos.x,pos.y)<rangePx && e.t>bestT){ bestT=e.t; target=e; }
+      if(dist(tx,ty,pos.x,pos.y)<rangePx) inRangeEnemies.push(e);
     });
+    const target = pickTarget(t, inRangeEnemies);
     if(target){
       const pos = pathPos(target.t, target.pathId||0);
       t.angle = Math.atan2(pos.y - ty, pos.x - tx);
       t.recoil = 5;
       const bdmg=towerDmg(t);
-      state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:bdmg,color:tp.bullet,speed:6,src:t.type,aoe:tp.aoe||false,aoeRadius:tp.aoeRadius||0});
+      state.bullets.push({x:tx,y:ty,tx:pos.x,ty:pos.y,target:target.id,dmg:bdmg,color:tp.bullet,speed:6,src:t.type,aoe:tp.aoe||false,aoeRadius:tp.aoeRadius||0,penetrating:tp.penetrating||false,slowOnHit:tp.slowOnHit||false,towerId:t.id});
       if(t.type==='heavy')playSound('shot_heavy');else playSound('shot_basic');
       t.cd = tp.fireRate;
     }
@@ -1585,6 +1747,27 @@ function update(){
     const dx=b.tx-b.x, dy=b.ty-b.y, d=Math.sqrt(dx*dx+dy*dy);
     // Si la bala llega al destino: aplicar daño
     if(d <= b.speed){
+      // Penetrating bullets (cryocannon): don't mark hit, instead damage and continue
+      if(b.penetrating){
+        if(!b.hit_ids) b.hit_ids = new Set();
+        if(e && !e.dead && !b.hit_ids.has(e.id)){
+          b.hit_ids.add(e.id);
+          if(e.shield){ e.shield=false; e.hitFlash=8; }
+          else {
+            const actualDmg=Math.min(e.hp,b.dmg);
+            e.hp -= b.dmg; e.hitFlash=6; e.noHitTimer=0;
+            e._cryo = 120;
+            if(b.src) state.dmgByType[b.src]=(state.dmgByType[b.src]||0)+actualDmg;
+            const srcTower = state.towers.find(t=>t.id===b.towerId); if(srcTower) srcTower.dmgDealt=(srcTower.dmgDealt||0)+actualDmg;
+            if(e.hp<=0){ e.dead=true; state.coins+=e.reward; state.totalKills=(state.totalKills||0)+1; playSound('death'); spawnDeathParticles(b.tx,b.ty,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color); }
+          }
+        }
+        // bullet keeps moving — find new target ahead
+        const newTarget = state.enemies.find(en=>!en.dead && !b.hit_ids.has(en.id) && (()=>{const p=pathPos(en.t,en.pathId||0);return p&&dist(b.x,b.y,p.x,p.y)<CW*6;})());
+        if(newTarget){ const np=pathPos(newTarget.t,newTarget.pathId||0); if(np){b.target=newTarget.id;b.tx=np.x;b.ty=np.y;} }
+        else { b.hit=true; }
+        return;
+      }
       b.hit=true;
       if(e && !e.dead){
         if(e.shield){ e.shield=false; e.hitFlash=8; } // blindado: absorbe primer golpe
@@ -1592,10 +1775,11 @@ function update(){
           const actualDmg=Math.min(e.hp,b.dmg);
           e.hp -= b.dmg; e.hitFlash=6; e.noHitTimer=0;
           if(b.src) state.dmgByType[b.src]=(state.dmgByType[b.src]||0)+actualDmg;
+          const srcTower = state.towers.find(t=>t.id===b.towerId); if(srcTower) srcTower.dmgDealt=(srcTower.dmgDealt||0)+actualDmg;
           if(e.hp<=0){ e.dead=true; state.coins+=e.reward; state.totalKills=(state.totalKills||0)+1; playSound('death'); spawnDeathParticles(b.tx,b.ty,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color); }
         }
       }
-      // AoE: explosivo — daño en área al impactar
+      // AoE: explosivo / bomberdrone — daño en área al impactar
       if(b.aoe){
         const impactX=b.tx, impactY=b.ty;
         // Partículas de explosión
@@ -1608,7 +1792,9 @@ function update(){
             else{
               const aoeDmg=Math.min(ae.hp,b.dmg);
               ae.hp-=b.dmg;ae.hitFlash=6;ae.noHitTimer=0;
+              if(b.slowOnHit) ae._cryo=120;
               if(b.src) state.dmgByType[b.src]=(state.dmgByType[b.src]||0)+aoeDmg;
+              const srcTowerAoe = state.towers.find(t=>t.id===b.towerId); if(srcTowerAoe) srcTowerAoe.dmgDealt=(srcTowerAoe.dmgDealt||0)+aoeDmg;
               if(ae.hp<=0){ae.dead=true;state.coins+=ae.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(ap.x,ap.y,(ENEMY_KINDS[ae.kind]||ENEMY_KINDS.normal).color);}
             }
           }
@@ -1648,6 +1834,7 @@ function update(){
     if(state.wave >= TOTAL_WAVES && !(state.diff && state.diff.infiniteMode)){
       state.victory = true;
       setMsg('¡Victoria! Completaste las 100 oleadas!');
+      setTimeout(showStatsScreen,800);
     } else {
       playSound('wave_complete');
       const bonusMult = (state.diff && state.diff.bonusMult) || 1;
@@ -1725,7 +1912,7 @@ function update(){
       if(dist(b.x,b.y,p.x,p.y)<CW*0.45){
         b.hit_ids[e.id]=true;
         if(e.shield){e.shield=false;e.hitFlash=8;}
-        else{var _cdmg=Math.min(e.hp,b.dmg);e.hp-=b.dmg;e.hitFlash=6;e.noHitTimer=0;state.cannonDmgTotal=(state.cannonDmgTotal||0)+_cdmg;state.dmgByType['cannon']=(state.dmgByType['cannon']||0)+_cdmg;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}
+        else{var _cdmg=Math.min(e.hp,b.dmg);e.hp-=b.dmg;e.hitFlash=6;e.noHitTimer=0;state.cannonDmgTotal=(state.cannonDmgTotal||0)+_cdmg;state.dmgByType['cannon']=(state.dmgByType['cannon']||0)+_cdmg;var _cSrc=state.towers.find(function(t){return t.id===b.towerId;});if(_cSrc)_cSrc.dmgDealt=(_cSrc.dmgDealt||0)+_cdmg;if(e.hp<=0){e.dead=true;state.coins+=e.reward;state.totalKills=(state.totalKills||0)+1;playSound('death');spawnDeathParticles(p.x,p.y,(ENEMY_KINDS[e.kind]||ENEMY_KINDS.normal).color);}}
       }
     });
     // Eliminar solo al salir del canvas
@@ -1828,6 +2015,67 @@ function draw(){
     const rcX = -Math.cos(t.angle??-Math.PI/2)*rcDist;
     const rcY = -Math.sin(t.angle??-Math.PI/2)*rcDist;
     if(t.type==='helicopter') drawHelicopter(ctx, tx+rcX, ty+rcY, t.angle ?? -Math.PI/2, r);
+    else if(t.type==='bomberdrone'){
+      // Draw like helicopter but purple
+      ctx.save();
+      ctx.translate(tx+rcX, ty+rcY);
+      ctx.rotate((t.angle ?? -Math.PI/2) + Math.PI/2);
+      ctx.fillStyle='rgba(0,0,0,0.25)';
+      ctx.beginPath(); ctx.ellipse(r*0.1,r*0.2,r*0.9,r*0.55,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#3a1a4a'; ctx.lineWidth=r*0.1;
+      ctx.beginPath(); ctx.moveTo(-r*0.7,r*0.6); ctx.lineTo(r*0.7,r*0.6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.7,-r*0.5); ctx.lineTo(r*0.7,-r*0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-r*0.5,r*0.6); ctx.lineTo(-r*0.5,-r*0.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(r*0.5,r*0.6); ctx.lineTo(r*0.5,-r*0.5); ctx.stroke();
+      var bdg=ctx.createLinearGradient(-r*0.6,-r*0.4,r*0.6,r*0.4);
+      bdg.addColorStop(0,'#8a3aaa'); bdg.addColorStop(1,'#4a1a6a');
+      ctx.fillStyle=bdg;
+      ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r*0.42,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#3a1a5a'; ctx.lineWidth=r*0.06;
+      ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r*0.42,0,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='rgba(200,160,255,0.55)';
+      ctx.beginPath(); ctx.ellipse(-r*0.22,-r*0.05,r*0.32,r*0.26,0,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='rgba(160,100,220,0.8)'; ctx.lineWidth=r*0.05;
+      ctx.beginPath(); ctx.ellipse(-r*0.22,-r*0.05,r*0.32,r*0.26,0,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='#6a2a8a';
+      ctx.beginPath(); ctx.moveTo(r*0.55,-r*0.1); ctx.lineTo(r*1.1,r*0.04); ctx.lineTo(r*1.0,r*0.14); ctx.lineTo(r*0.55,r*0.1); ctx.closePath(); ctx.fill();
+      var rotorA2=Date.now()*0.018;
+      ctx.save(); ctx.strokeStyle='rgba(80,20,80,0.9)'; ctx.lineWidth=r*0.09; ctx.lineCap='round';
+      for(var bi=0;bi<3;bi++){var ba=rotorA2+(bi/3)*Math.PI*2;ctx.beginPath();ctx.moveTo(Math.cos(ba)*r*0.1,Math.sin(ba)*r*0.1);ctx.lineTo(Math.cos(ba)*r*0.88,Math.sin(ba)*r*0.88);ctx.stroke();}
+      ctx.restore();
+      ctx.fillStyle='#4a1a6a'; ctx.beginPath(); ctx.arc(0,0,r*0.13,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#8844aa'; ctx.beginPath(); ctx.arc(0,0,r*0.07,0,Math.PI*2); ctx.fill();
+      ctx.lineWidth=1; ctx.lineCap='butt'; ctx.restore();
+    }
+    else if(t.type==='cryocannon'){
+      // Draw like cannon but ice-blue
+      var ccx=(t.col+0.5)*CW, ccy=(t.row+0.5)*CH;
+      ctx.save();
+      var ccbg=ctx.createRadialGradient(ccx-CW*0.1,ccy-CW*0.1,CW*0.05,ccx,ccy,CW*0.38);
+      ccbg.addColorStop(0,'#3a8acc'); ccbg.addColorStop(1,'#0a2a4a');
+      ctx.fillStyle=ccbg;
+      ctx.beginPath(); ctx.arc(ccx,ccy,CW*0.38,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#0a1a2a'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(ccx,ccy,CW*0.38,0,Math.PI*2); ctx.stroke();
+      ctx.fillStyle='#0a1828';
+      ctx.beginPath(); ctx.ellipse(ccx+CW*0.3,ccy+CW*0.22,CW*0.13,CW*0.18,0.3,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(ccx-CW*0.3,ccy+CW*0.22,CW*0.13,CW*0.18,-0.3,0,Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(ccx,ccy); ctx.rotate(t.angle||0);
+      ctx.fillStyle='#1a6a9a'; ctx.fillRect(0,-CW*0.1,CW*0.5,CW*0.2);
+      ctx.fillStyle='#0a3a5a'; ctx.fillRect(CW*0.44,-CW*0.12,CW*0.1,CW*0.24);
+      ctx.fillStyle='#55aadd'; ctx.fillRect(-CW*0.06,-CW*0.07,CW*0.12,CW*0.14);
+      // Ice crystal effect at barrel tip
+      ctx.globalAlpha=0.7+0.3*Math.sin(Date.now()*0.008);
+      ctx.fillStyle='#aaeeff';
+      ctx.beginPath(); ctx.arc(CW*0.54,0,CW*0.07,0,Math.PI*2); ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.restore();
+      // Reload arc
+      var ccprog=(t.cd||0)/(TOWER_TYPES.cryocannon.fireRate);
+      ctx.strokeStyle='rgba(100,200,255,0.75)'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(ccx,ccy,CW*0.44,-Math.PI/2,-Math.PI/2+(1-ccprog)*Math.PI*2); ctx.stroke();
+      ctx.restore();
+    }
     else if(t.type==='cannon'){
       drawCannonObj(ctx, t.col, t.row, t.angle ?? 0, false);
       // Arco de progreso de recarga
@@ -2130,16 +2378,43 @@ let animId, gameActive=false;
 function stopAudio(){if(_audioCtx){try{_audioCtx.close();}catch(e){}}_audioCtx=null;}
 function loop(){ update(); if(state.speed2x) update(); draw(); animId=requestAnimationFrame(loop); }
 
+const TARGET_MODE_LABELS = {
+  first:   '🎯 Objetivo: Primero',
+  last:    '🎯 Objetivo: Último',
+  mosthp:  '🎯 Objetivo: Más HP',
+  fastest: '🎯 Objetivo: Más Rápido',
+  closest: '🎯 Objetivo: Más Cercano'
+};
+const TARGET_MODE_CYCLE = ['first','last','mosthp','fastest','closest'];
+
 let _tmIdx = -1;
 function showTowerMenu(idx,cx,cy){
   _tmIdx=idx;
   var t=state.towers[idx],tp=TOWER_TYPES[t.type];
-  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador",helicopter:"Helicoptero",explosive:"Explosivo",healer:"Curandero"};
+  var names={basic:"Basica",fast:"Rapida",heavy:"Pesada",elite:"Elite",jetpack:"Jetpack",ice:"Enfriador",helicopter:"Helicoptero",explosive:"Explosivo",healer:"Curandero",cannon:"Cañon",bomb:"Bomba",spikes:"Pinchos",cryocannon:"Cryo Cañon",bomberdrone:"Bomber Drone"};
   var menu=document.getElementById("tower-menu");
   document.getElementById("tmenu-name").textContent=(names[t.type]||t.type)+" (Nv."+(t.level||1)+")";
   document.getElementById("tmenu-target").textContent=tp.targeting==="none"?"No ataca — restaura vidas":tp.slowTower?"Retrocede TERRESTRE y AEREO":tp.targeting==="both"?(tp.aoe?"Ataca TERRESTRE y AEREO (AoE)":"Ataca TERRESTRE y AEREO"):tp.targeting==="air"?"Ataca AEREOS":"Ataca TERRESTRES";
   var slowPcts=[45,28,12];
-  document.getElementById("tmenu-stats").textContent="Dano: "+towerDmg(t).toFixed(1)+"\n"+(tp.slowTower?"Retroceso: "+slowPcts[(t.level||1)-1]+"% velocidad\n":"")+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3";
+  document.getElementById("tmenu-stats").textContent="Dano: "+towerDmg(t).toFixed(1)+"\n"+(tp.slowTower?"Retroceso: "+slowPcts[(t.level||1)-1]+"% velocidad\n":"")+"Rango: "+towerRange(t).toFixed(1)+"\nNivel: "+(t.level||1)+"/3\n⚔️ Daño total: "+Math.round(t.dmgDealt||0);
+  // Targeting mode button
+  var tmBtn=document.getElementById("tmenu-targeting");
+  if(!tmBtn){
+    tmBtn=document.createElement("button");tmBtn.id="tmenu-targeting";
+    tmBtn.style.cssText="width:100%;margin-top:8px;padding:8px;background:rgba(50,80,160,0.6);color:#aaddff;font-weight:600;border:1px solid rgba(100,150,255,0.4);border-radius:8px;cursor:pointer;font-size:12px;";
+    document.getElementById("tmenu-sell").before(tmBtn);
+    tmBtn.addEventListener("click",function(){
+      if(_tmIdx<0)return;
+      var tt=state.towers[_tmIdx];
+      var cur=tt.targetMode||'first';
+      var ci=TARGET_MODE_CYCLE.indexOf(cur);
+      tt.targetMode=TARGET_MODE_CYCLE[(ci+1)%TARGET_MODE_CYCLE.length];
+      tmBtn.textContent=TARGET_MODE_LABELS[tt.targetMode];
+    });
+  }
+  tmBtn.textContent=TARGET_MODE_LABELS[t.targetMode||'first'];
+  // Hide targeting button for non-attacking towers
+  tmBtn.style.display=(tp.targeting==='none'||t.type==='bomb'||t.type==='spikes'||t.type==='cannon')?"none":"block";
   var upBtn=document.getElementById("tmenu-upgrade");
   if(!upBtn){
     upBtn=document.createElement("button");upBtn.id="tmenu-upgrade";
@@ -2161,7 +2436,7 @@ function showTowerMenu(idx,cx,cy){
   else{upBtn.textContent="Nivel maximo (3/3)";upBtn.disabled=true;upBtn.style.opacity="0.5";}
   document.getElementById("tmenu-sell").textContent="Vender (+"+(Math.floor(tp.cost*0.5))+" monedas)";
   menu.style.display="block";
-  var mw=200,mh=210,x=cx+12,y=cy-20;
+  var mw=210,mh=240,x=cx+12,y=cy-20;
   if(x+mw>window.innerWidth)x=cx-mw-12;
   if(y+mh>window.innerHeight)y=window.innerHeight-mh-10;
   menu.style.left=x+"px";menu.style.top=y+"px";
@@ -2230,7 +2505,7 @@ canvas.addEventListener('click', e=>{
   if(state.towers.find(t=>t.col===col&&t.row===row)){setMsg("Ya hay una torre aqui");return;}
   if(state.coins<tp.cost){setMsg("No tienes suficientes monedas");return;}
   state.coins-=tp.cost;
-  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false,angle:state.selectedType==='cannon'?0:-Math.PI/2,level:1});
+  state.towers.push({col,row,type:state.selectedType,cd:0,showRange:false,angle:state.selectedType==='cannon'?0:-Math.PI/2,level:1,targetMode:'first',id:++towerIdCounter,dmgDealt:0});
   state.totalTowersPlaced=(state.totalTowersPlaced||0)+1;
   if(state.selectedType==="elite")state.elitePlaced=(state.elitePlaced||0)+1;
   var _pk='placed_'+state.selectedType;state[_pk]=(state[_pk]||0)+1;
@@ -2277,7 +2552,26 @@ document.getElementById('sellBtn').addEventListener('click',()=>{
 });
 document.getElementById('resetBtn').addEventListener('click', resetGame);
 document.getElementById("soundBtn").addEventListener("click",function(){soundEnabled=!soundEnabled;var b=document.getElementById("soundBtn");b.textContent=soundEnabled?"SND:ON":"SND:OFF";b.classList.toggle("muted",!soundEnabled);});
-document.getElementById('menuBtn').addEventListener('click', ()=>{ gameActive=false; stopAudio(); showScreen('screen-menu'); });
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  gameActive=false; stopAudio();
+  document.getElementById('screen-stats').style.display='none';
+  showScreen('screen-menu');
+});
+
+// Map selector buttons
+document.querySelectorAll('.map-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    currentMap = btn.dataset.map;
+    document.querySelectorAll('.map-btn').forEach(b=>{
+      b.style.background = 'rgba(255,255,255,.06)';
+      b.style.borderColor = 'rgba(255,255,255,.12)';
+      b.style.color = 'rgba(255,255,255,.75)';
+    });
+    btn.style.background = 'rgba(255,255,255,.18)';
+    btn.style.borderColor = 'rgba(255,255,255,.4)';
+    btn.style.color = '#fff';
+  });
+});
 
 // Estado inicial vacío — se llena al elegir dificultad
 let state = {lives:20,coins:300,wave:0,towers:[],enemies:[],bullets:[],particles:[],bombs:[],spikes:[],cannonBullets:[],waveRunning:false,spawning:false,spawnQueue:[],spawnTimer:0,selectedType:'basic',sellMode:false,gameOver:false,victory:false,autoWave:false,diff:DIFF_CONFIG.normal,introTimer:0,livesAtWaveStart:20,totalKills:0,totalTowersPlaced:0,bombKills:0,elitePlaced:0,perfectWaves:0,maxCoins:0,totalUpgrades:0,placed_basic:0,placed_fast:0,placed_heavy:0,placed_elite:0,placed_jetpack:0,placed_ice:0,placed_helicopter:0,placed_bomb:0,placed_spikes:0,placed_cannon:0,bombDmgTotal:0,spikesDmgTotal:0,cannonDmgTotal:0,streakWaves:0,dmgByType:{},decorations:[],speed2x:false};
